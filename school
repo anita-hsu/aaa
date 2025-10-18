@@ -1,10 +1,13 @@
+<!DOCTYPE html>
 <html>
 <head>
-<body>
-新豐國小<br>
-新豐國中<br>
-新竹高商應英系<br>
-勤益科大資管系
-</html>
+    <meta charset="UTF-8">
+    <title>我的學歷</title>
 </head>
+<body>
+    新豐國小<br>
+    新豐國中<br>
+    新竹高商應英系<br>
+    勤益科大資管系
 </body>
+</html>
