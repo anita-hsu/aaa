@@ -3,21 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自我介紹 </title>
+  <title>自我介紹</title>
+  <!-- 載入 Google 字型 -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* -------- 全域設定 -------- */
     html {
       scroll-behavior: smooth;
     }
+
     body {
-      font-family: 'Segoe UI', Arial, sans-serif;
+      font-family: 'Poppins', sans-serif; /* 使用 Poppins 字型 */
       margin: 0;
       color: #fff;
-      background: linear-gradient(-45deg, #00bcd4, #2196f3, #673ab7, #ff4081);
+      background: linear-gradient(-45deg, #FF79C6, #FF6EC7, #F5A3C7, #FFB6C1);
       background-size: 400% 400%;
       animation: gradientBG 12s ease infinite;
       overflow-x: hidden;
       transition: background 1s ease;
+      padding-top: 60px; /* 防止固定的導覽列遮住內容 */
     }
 
     /* 背景漸層動態動畫 */
@@ -39,7 +43,9 @@
 
     header h1 {
       margin: 0;
+      font-family: 'Dancing Script', cursive; /* 使用 Dancing Script 字型 */
       font-size: 2.5rem;
+      color: #FF79C6; /* 粉紅色 */
     }
 
     footer {
@@ -51,7 +57,7 @@
     }
 
     footer a {
-      color: #ffeb3b;
+      color: #FFEB3B;
       text-decoration: none;
       margin-left: 5px;
     }
@@ -85,14 +91,14 @@
       transition: all 0.3s ease;
     }
     nav a:hover {
-      color: #ffeb3b;
-      text-shadow: 0 0 10px #fff;
+      color: #FF79C6; /* 粉紅色 */
+      text-shadow: 0 0 10px #FF79C6;
     }
 
     /* -------- 自我介紹區 -------- */
     section {
       min-height: 100vh;
-      padding-top: 100px;
+      padding-top: 50px; /* 頁面區塊的內邊距，避免被固定的元素遮住 */
       text-align: center;
       position: relative;
       opacity: 0;
@@ -105,9 +111,10 @@
     }
 
     h1, h2 {
-      background: linear-gradient(to right, #fff, #ffeb3b);
+      background: linear-gradient(to right, #fff, #FF79C6);
       -webkit-background-clip: text;
       color: transparent;
+      font-family: 'Poppins', sans-serif;
       font-size: 2.5em;
       letter-spacing: 2px;
       margin-bottom: 10px;
@@ -155,7 +162,7 @@
       display: none;
     }
     #toTop:hover {
-      background: #ffeb3b;
+      background: #FF79C6; /* 粉紅色 */
       color: #333;
       transform: scale(1.2);
     }
@@ -190,10 +197,9 @@
     <h2>我的技能</h2>
     <ul>
       <li>HTML</li>
-      <li>Javat</li>
+      <li>JavaScript</li>
       <li>C#</li>
       <li>Git / GitHub</li>
-      
     </ul>
   </section>
 
