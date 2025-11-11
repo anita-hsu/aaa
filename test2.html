@@ -22,6 +22,7 @@
       overflow-x: hidden;
       transition: background 1s ease;
       padding-top: 60px; /* 防止固定的導覽列遮住內容 */
+      position: relative;
     }
 
     /* 背景漸層動態動畫 */
@@ -29,6 +30,35 @@
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
+    }
+
+    /* -------- 飄泡泡效果 -------- */
+    .bubble {
+      position: absolute;
+      bottom: -100px;
+      width: 60px;
+      height: 60px;
+      background-color: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: floatBubble 8s infinite;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 泡泡飄動動畫 */
+    @keyframes floatBubble {
+      0% {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: translateX(100px) translateY(-200px);
+        opacity: 0.7;
+      }
+      100% {
+        transform: translateX(-100px) translateY(-400px);
+        opacity: 0;
+      }
     }
 
     /* -------- 頁首頁尾 -------- */
@@ -104,6 +134,7 @@
       opacity: 0;
       transform: translateY(60px);
       transition: opacity 1s ease, transform 1s ease;
+      margin-bottom: 40px; /* 增加區塊之間的間距 */
     }
     section.show {
       opacity: 1;
@@ -123,13 +154,14 @@
     /* -------- 名片樣式 -------- */
     .card {
       width: 320px;
-      margin: 80px auto;
-      background: rgba(255, 255, 255, 0.15);
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px);
       border-radius: 15px;
       padding: 30px;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
       transition: transform 0.4s, box-shadow 0.4s;
+      border: 2px solid #FF79C6; /* 名片邊框使用粉紅色 */
     }
     .card:hover {
       transform: scale(1.05);
@@ -169,6 +201,13 @@
   </style>
 </head>
 <body>
+  <!-- 添加泡泡效果 -->
+  <div class="bubble" style="left: 10%; animation-delay: 0s;"></div>
+  <div class="bubble" style="left: 30%; animation-delay: 2s;"></div>
+  <div class="bubble" style="left: 50%; animation-delay: 4s;"></div>
+  <div class="bubble" style="left: 70%; animation-delay: 1s;"></div>
+  <div class="bubble" style="left: 90%; animation-delay: 3s;"></div>
+
   <!-- 頁首 -->
   <header>
     <h1>Anita</h1>
