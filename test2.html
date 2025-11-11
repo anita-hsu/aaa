@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自我介紹 - 王曉明</title>
+  <style>
+    /* -------- 全域設定 -------- */
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      color: #fff;
+      background: linear-gradient(-45deg, #00bcd4, #2196f3, #673ab7, #ff4081);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      overflow-x: hidden;
+      transition: background 1s ease;
+    }
+
+    /* 背景漸層動態動畫 */
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* -------- 頁首頁尾 -------- */
+    header, footer {
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      font-size: 18px;
+      letter-spacing: 1px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    footer a {
+      color: #ffeb3b;
+      text-decoration: none;
+      margin-left: 5px;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* -------- 導覽列 -------- */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 15px 0;
+      text-align: center;
+      z-index: 1000;
+      transition: background 0.5s ease;
+    }
+    nav.scrolled {
+      background: rgba(0, 0, 0, 0.6);
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      margin: 0 20px;
+      font-weight: bold;
+      font-size: 18px;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+    nav a:hover {
+      color: #ffeb3b;
+      text-shadow: 0 0 10px #fff;
+    }
+
+    /* -------- 自我介紹區 -------- */
+    section {
+      min-height: 100vh;
+      padding-top: 100px;
+      text-align: center;
+      position: relative;
+      opacity: 0;
+      transform: translateY(60px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+    section.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1, h2 {
+      background: linear-gradient(to right, #fff, #ffeb3b);
+      -webkit-background-clip: text;
+      color: transparent;
+      font-size: 2.5em;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    /* -------- 名片樣式 -------- */
+    .card {
+      width: 320px;
+      margin: 80px auto;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+      transition: transform 0.4s, box-shadow 0.4s;
+    }
+    .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+    }
+    .card img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.5);
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+
+    /* -------- 回到頂部按鈕 -------- */
+    #toTop {
+      position: fixed;
+      right: 30px;
+      bottom: 30px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 22px;
+      box-shadow: 0 0 15px rgba(255,255,255,0.2);
+      transition: all 0.4s ease;
+      display: none;
+    }
+    #toTop:hover {
+      background: #ffeb3b;
+      color: #333;
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- 頁首 -->
+  <header>
+    <h1>王曉明</h1>
+    <p>前端工程師 | 網頁設計師 | 技術愛好者</p>
+  </header>
+
+  <!-- 導覽列 -->
+  <nav id="navbar">
+    <a href="#about">關於我</a>
+    <a href="#skills">技能</a>
+    <a href="#contact">聯絡我</a>
+  </nav>
+
+  <!-- 關於我區 -->
+  <section id="about">
+    <div class="card">
+      <img src="https://picsum.photos/200" alt="王曉明">
+      <h1>Anita</h1>
+      <h3>勤益科大</h3>
+      <p>有點內向</p>
+    </div>
+  </section>
+
+  <!-- 技能區 -->
+  <section id="skills">
+    <h2>我的技能</h2>
+    <ul>
+      <li>HTML</li>
+      <li>Javat</li>
+      <li>C#</li>
+      <li>Git / GitHub</li>
+      
+    </ul>
+  </section>
+
+  <!-- 聯絡我區 -->
+  <section id="contact">
+    <h2>聯絡我</h2>
+    <p>你可以透過以下方式聯繫我：</p>
+    <p>Email: <a href="mailto:ex@gmail.com">ex@gmail.com</a></p>
+    <p>GitHub: <a href="https://github.com" target="_blank">我的 GitHub</a></p>
+  </section>
+
+  <!-- 回到頂部按鈕 -->
+  <button id="toTop" onclick="scrollToTop()">⬆</button>
+
+  <!-- 頁尾 -->
+  <footer>
+    <p>© 2025 Anita. 由 <a href="https://github.com" target="_blank">GitHub</a> 開發.</p>
+  </footer>
+
+  <script>
+    // 滾動顯示動畫 + 導覽列變色
+    const sections = document.querySelectorAll("section");
+    const navbar = document.getElementById("navbar");
+    const toTop = document.getElementById("toTop");
+
+    window.addEventListener("scroll", () => {
+      const trigger = window.innerHeight * 0.85;
+      sections.forEach(sec => {
+        const rect = sec.getBoundingClientRect();
+        if (rect.top < trigger) sec.classList.add("show");
+      });
+
+      if (window.scrollY > 100) {
+        navbar.classList.add("scrolled");
+        toTop.style.display = "block";
+      } else {
+        navbar.classList.remove("scrolled");
+        toTop.style.display = "none";
+      }
+    });
+
+    // 回到頂端按鈕
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
