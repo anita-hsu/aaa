@@ -2,50 +2,164 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>介紹頁面</title>
+
     <style>
-        .apple{background-color: darkseagreen;}
-        .meme{color: #f7f4f4;}
-        :hover{color: #76ca27; background-color: bisque;}
-        table{ border-collapse: collapse; width: 80%; text-align:center;}
-        #bt1 {background-color: darkgoldenrod;}
-        a :visited{color:green;}
-        a :link{color: coral;}
-        body{background-color: rgba(233, 139, 139, 0.63);}
-        h2 { background-color: aqua;}
+        body{
+            background: linear-gradient(120deg, #ffd1d1, #ffe9d6);
+            font-family: "Segoe UI";
+            padding: 20px;
+        }
+
+        /* 連結樣式 */
+        nav a {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border-radius: 8px;
+            background-color: #fff;
+            text-decoration: none;
+            color: #e25a20;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        /* 滑過連結 */
+        nav a:hover{
+            background-color: #ffe2c6;
+            color: #5a3e1b;
+        }
+
+        /* 點過後變色（visited） */
+        nav a:visited{
+            color: green;
+            background-color: #d7ffd7;
+            
+        }
+        #bt1.clicked {
+    background-color: rgb(71, 123, 255) !important;
+    color: white;}
+
+        /* 區段容器 */
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin-top: 35px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px #9995;
+        }
+
+        /* 標題樣式 */
+        h2 {
+            background-color: #a4f0ff;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 26px;
+        }
+
+        /* 表格 */
+        table{
+            border-collapse: collapse;
+            width: 80%;
+            margin: auto;
+            text-align:center;
+            font-size: 18px;
+        }
+        td{
+            padding: 10px;
+        }
+        table tr:nth-child(even){
+            background-color: #ffd0c8;
+        }
+        table tr:nth-child(odd){
+            background-color: #9ddddd;
+        }
+        .footer-row{
+            background-color: #fff !important;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* 按鈕 */
+        #bt1 {
+            background-color: darkgoldenrod;
+            padding: 10px 20px;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        #bt1:hover {
+            background-color: #b78b16;
+        }
+
+        img{
+            display: block;
+            margin: 0 auto;
+            border: 5px dotted #0004;
+            opacity: 0.8;
+        }
     </style>
 </head>
+
 <body>
-    <h2>花花</h2>
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/An_expression_about_wiki_BY_FHH440.jpg/250px-An_expression_about_wiki_BY_FHH440.jpg" style="opacity: 0.6; border: dotted;">
-    <ol>
-        <li class="apple">123</li>
-        <li class="meme">123</li>
-    </ol>
-    <table class="meme" >
-        <tr style="background-color: rgb(9, 92, 92) ;color: #000;">
-            <td><a href=https://chatgpt.com>區域</a></td>
-            <td>數據</td>
-        </tr>
-        <tr style="background-color: lightcoral;">
-            <td>北</td>
-            <td>80%</td>
-        </tr>
-        <tr style="background-color: rgb(10, 100, 100);">
-            <td>中</td>
-            <td>75%</td>
-        </tr>
-        <tr style="background-color: lightcoral;">
-            <td>南</td>
-            <td>90%</td>
-        </tr>
-        <tr style="color: #000;">
-            <td colspan="2">資料來源</td>
-        </tr>
-    </table>
-    <input type="button" id="bt1" value="瓜">
-    <a href=https://chatgpt.com>gpt</a>
+<h1>寵物介紹</h1>
+    <!-- 導覽連結（可跳至下方區段） -->
+    <nav>
+        <a href="#flower">介紹：貓貓</a>
+        <a href="#animal">介紹：狗狗</a>
+    </nav>
+
+
+    <div id="flower" class="section">
+        <h2>貓貓介紹</h2>
+
+        <img src="https://tse1.mm.bing.net/th/id/OIP.1wZBvv9A8WbT2tlrso2HGgHaEo?pid=Api&P=0&h=180">
+
+        <ol>
+            <li class="apple">貓的種類很多</li>
+            <li class="meme">例如橘貓胖胖的</li>
+        </ol>
+
+        <table class="meme">
+            <tr style="background-color: rgb(9, 92, 92); color: #000;">
+                <td>地區</td>
+                <td>毛色比例</td>
+            </tr>
+            <tr><td>橘</td><td>50%</td></tr>
+            <tr><td>虎斑</td><td>45%</td></tr>
+            <tr><td>黑</td><td>30%</td></tr>
+            <tr><td>白</td><td>90%</td></tr>            
+            <tr class="footer-row"><td colspan="2">資料來源:猜的</td></tr>
+        </table>
+    </div>
+
+    <div id="animal" class="section">
+        <h2>狗狗</h2>
+
+        <p style="font-size: 18px; line-height: 1.5;">
+            常見的狗狗:
+        </p>
+
+        <ul>
+            <li>吉娃娃</li>
+            <li>拉不拉多</li>
+            <li>米克斯</li>
+        </ul>
+
+        <img src="https://img.pconline.com.cn/images/photoblog/8/4/8/1/8481085/20094/30/1241102580205.jpg" width="400"  style="border: 4px solid #333; box-shadow: 0px 0px 10px #999;">
+    </div>
+
+    <input type="button" id="bt1" value="按我沒用但很可愛">
+    <script>
+    document.getElementById("bt1").onclick = function(){
+        alert("不是說沒用了你還按!!");
+         this.classList.add("clicked");
+    };
+</script>
+
 </body>
 </html>
