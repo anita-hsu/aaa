@@ -1,0 +1,144 @@
+@charset "utf-8";
+
+/* ================== 1. 基礎設定 ================== */
+body { font-family: "Microsoft JhengHei", sans-serif; margin: 0; padding: 0; background: #f4f4f4; color: #333; }
+a { text-decoration: none; color: #333; }
+a:hover { color: #0055a6; }
+ul { list-style: none; padding: 0; margin: 0; }
+
+/* 圖片預設 */
+img { max-width: 100%; height: auto; display: block; }
+
+.container { max-width: 1140px; margin: 0 auto; padding: 0 15px; }
+
+/* ================== 2. 圖片統一大小控制 (關鍵修改) ================== */
+/* 使用 object-fit: cover 讓圖片填滿方框但不變形 */
+.img-fixed {
+    width: 100%;
+    object-fit: cover; 
+    border-radius: 4px;
+}
+
+/* 輪播圖高度設定 */
+.banner-img {
+    height: 350px; /* 您可以依需求調整這個數字 */
+}
+
+/* 近期宣傳高度設定 */
+.promo-img {
+    height: auto; /* 宣傳海報通常保留原比例，或者設為固定 height: 300px; */
+    max-height: 400px;
+}
+
+/* 資管相簿高度設定 (強制正方形或長方形) */
+.album-img {
+    height: 120px; 
+    border: 1px solid #ddd;
+}
+
+/* 影音專區縮圖高度 */
+.video-img {
+    height: 180px;
+}
+
+/* 手機版調整 (讓圖片在手機上高度縮小一點) */
+@media (max-width: 768px) {
+    .banner-img { height: 200px; }
+    .album-img { height: 80px; }
+}
+
+
+/* ================== 3. Header & Search ================== */
+.header { background: #fff; padding: 15px 0; border-top: 5px solid #0055a6; position: relative; }
+.mlogo img { max-height: 65px; width: auto; } /* Logo 不強制裁切 */
+
+.search-box { position: absolute; right: 15px; top: 20px; }
+.search-group { display: flex; }
+.search-input { padding: 5px 10px; border: 1px solid #ccc; border-radius: 3px 0 0 3px; }
+.search-btn { background: #0055a6; color: #fff; border: 1px solid #0055a6; padding: 5px 10px; cursor: pointer; border-radius: 0 3px 3px 0; }
+
+.mnavbar { background: #333; margin-top: 15px; }
+.nav { display: flex; flex-wrap: wrap; }
+.nav li a { display: block; padding: 12px 20px; color: #fff; font-weight: bold; }
+.nav li a:hover { background: #0055a6; }
+
+/* ================== 4. 佈局 Layout ================== */
+.main { padding: 30px 0; }
+.row { display: flex; flex-wrap: wrap; margin: 0 -15px; }
+.col { padding: 0 15px; box-sizing: border-box; margin-bottom: 20px; }
+
+.col_main { width: 100%; }
+.col_side { width: 100%; }
+.col-full { width: 100%; }
+
+@media (min-width: 768px) {
+    .col_main { width: 66%; }
+    .col_side { width: 34%; }
+}
+
+/* ================== 5. 模組通用樣式 ================== */
+.module { background: #fff; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.mt { border-bottom: 2px solid #0055a6; padding: 10px 15px; background: #fff; }
+.mt-title { margin: 0; font-size: 18px; color: #0055a6; border-left: 5px solid #f1c40f; padding-left: 10px; }
+
+/* 輪播 */
+.banner { position: relative; }
+.owl-controls { position: absolute; bottom: 10px; width: 100%; text-align: center; }
+.owl-dot { display: inline-block; width: 10px; height: 10px; background: rgba(255,255,255,0.6); border-radius: 50%; margin: 0 5px; }
+.owl-dot.active { background: #0055a6; transform: scale(1.2); }
+
+/* 新聞分頁 */
+.module-news-tabs { border-top: 3px solid #e67e22; }
+.nav-tabs { display: flex; background: #f8f8f8; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+.nav-tabs li { flex: 1; text-align: center; min-width: 80px; }
+.nav-tabs li a { display: block; padding: 10px 5px; font-size: 14px; color: #666; border-right: 1px solid #eee; }
+.nav-tabs li.active a { background: #fff; color: #0055a6; font-weight: bold; border-top: 2px solid #0055a6; position: relative; top: -1px; }
+.tab-content { padding: 15px; }
+.list-news li { padding: 8px 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; }
+.list-news .date { font-size: 12px; color: #999; margin-right: 10px; min-width: 75px; }
+.more-link { text-align: right; margin-top: 10px; font-size: 13px; }
+
+/* === [新增] 快速連結樣式 (Quick Links) === */
+.module-quick-links { border-top: 3px solid #3498db; }
+.quick-links-box { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; }
+.q-btn {
+    flex: 1 1 45%; /* 兩個一排 */
+    text-align: center;
+    background: #f0f0f0;
+    padding: 10px 5px;
+    border-radius: 4px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    transition: all 0.2s;
+}
+.q-btn:hover { background: #0055a6; color: #fff; border-color: #0055a6; }
+
+/* 資管相簿 */
+.module-album { border-top: 3px solid #27ae60; }
+.album-grid { display: flex; flex-wrap: wrap; padding: 10px; }
+.album-item { width: 25%; padding: 5px; box-sizing: border-box; }
+.album-item img:hover { opacity: 0.8; cursor: pointer; }
+
+/* 其他列表 */
+.module-info { border-top: 3px solid #8e44ad; }
+.list-links { padding: 15px; }
+.list-links li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+.list-links a:before { content: "▪"; color: #8e44ad; margin-right: 8px; }
+
+/* 聯絡我們 */
+.module-contact { border-top: 3px solid #c0392b; }
+.contact-info { padding: 15px; font-size: 14px; line-height: 1.6; }
+.btn-small { display: inline-block; background: #333; color: #fff; padding: 4px 10px; font-size: 12px; border-radius: 3px; margin-top: 5px; }
+
+/* 近期宣傳 */
+.module-promo { border-top: 3px solid #16a085; }
+.promo-content { padding: 10px; }
+
+/* 影音專區 */
+.module-video { border-top: 3px solid #e74c3c; }
+.video-container { display: flex; flex-wrap: wrap; padding: 15px; gap: 15px; }
+.video-item { flex: 1; min-width: 250px; background: #fafafa; border: 1px solid #eee; padding: 10px; border-radius: 4px; }
+.video-item p { text-align: center; margin-top: 8px; font-weight: bold; color: #555; }
+
+/* Footer */
+.footer { background: #333; color: #ccc; text-align: center; padding: 20px 0; margin-top: 20px; }
