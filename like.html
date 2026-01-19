@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>與妳的10天：孟孟篇 (RWD)</title>
+    <title>女生相處模擬器</title>
     <style>
         :root { --p: #ff8e91; }
         body { margin: 0; background: #1a1a1a; font-family: "Microsoft JhengHei", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; overflow: hidden; touch-action: manipulation; }
@@ -350,26 +350,97 @@
         love += win ? 3 : 0; say(win ? "happy" : "sad", win ? "贏了！" : "可惡，輸了。");
     }
 
-    function nextDay() {
-        if(day > lastChatDay + 1) {
-            noChatStreak++;
-            let p = Math.min(64, Math.pow(2, noChatStreak));
-            love -= p; 
-        }
-        day++; hp = 30; hour = 20; mahjongStage = 0; pjskStage = 0;
-        if(day > 10) {
-            isDead = true;
-            updateUI();
-            let isFriend = (study < 7 || skill < 10 || skill > 18 || look < 5);
-            if(isFriend) say("normal", "兄弟，你是個很好的朋友。上課加油吧。");
-            else if(love > 60) say("like", "這10天下來...我好像有點喜歡你了。");
-            else say("annoyed", "有緣再見吧，你是個好人。");
-        } else {
-            updateUI();
-            alert("第 " + day + " 天開始。");
-            checkSchoolMeet();
-        }
+    // 修改後的隔天與結局判定邏輯
+function nextDay() {
+    if(day > lastChatDay + 1) {
+        noChatStreak++;
+        let p = Math.min(64, Math.pow(2, noChatStreak));
+        love -= p; 
     }
+    day++; 
+    hp = 30; hour = 20; mahjongStage = 0; pjskStage = 0;
+    
+    if(day > 10) {
+        isDead = true;
+        updateUI();
+        determineEnding(); // 進入結局判定
+    } else {
+        updateUI();
+        alert("第 " + day + " 天開始。");
+        checkSchoolMeet();
+    }
+}
+
+// 結局判定邏輯
+function determineEnding() {
+    let isFriendAttr = (study < 7 || skill < 10 || skill > 18 || look < 5);
+    
+    if (isFriendAttr) {
+        // 屬性不合格，直接朋友結局
+        showEnding("normal", "兄弟，你是個很好的朋友。上課加油吧。", "happy.png");
+    } else if (love > 70) {
+        // 好感度達標，進入關鍵提問
+        showFinalQuiz();
+    } else {
+        // 好感度不足
+        showEnding("annoyed", "有緣再見吧，你是個好人。", "normal.png");
+    }
+}
+
+// 告白前的薯條考驗
+function showFinalQuiz() {
+    say("hold", "我有個問題想問你。如果你手上有雞排跟薯條，你會給我吃哪個？");
+    
+    const o = document.getElementById('opts'); o.innerHTML = "";
+    const quizOpts = [
+        { t: "1. 雞排", f: () => failQuiz("我不吃雞排，你忘了。") },
+        { t: "2. 薯條", f: () => successQuiz() },
+        { t: "3. 都給你", f: () => failQuiz("雖然很慷慨，但我吃素喔...") }
+    ];
+    
+    quizOpts.forEach(opt => {
+        let b = document.createElement('button');
+        b.className = 'btn';
+        b.innerText = opt.t;
+        b.onclick = () => { o.style.display='none'; opt.f(); };
+        o.appendChild(b);
+    });
+    o.style.display = 'flex';
+}
+
+// 答錯後的反應
+function failQuiz(msg) {
+    say("wink", msg + " 我們還是當朋友吧。");
+    setTimeout(() => {
+        showEnding("normal", "謝謝你的照顧，再見囉。", "happy.png");
+    }, 2000);
+}
+
+// 答對後的告白結局
+function successQuiz() {
+    say("shy", "沒錯...我最喜歡薯條了！你真的很懂我...");
+    setTimeout(() => {
+        say("like", "所以...我好像真的有點喜歡你了。");
+        showEnding("like", "【交往結局】", "shy.png");
+    }, 2000);
+}
+
+// 顯示最終結局畫面與照片
+function showEnding(face, msg, imgPath) {
+    document.getElementById('text').innerText = msg;
+    document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
+    
+    // 這裡妳可以更換成妳的結局照片
+    // 如果沒有圖片，可以維持顯示立繪
+    const finalSprite = document.getElementById('f-' + face);
+    if(finalSprite) finalSprite.classList.add('active');
+    
+    // 增加一個結束遮罩或大標題
+    let endBanner = document.createElement('div');
+    endBanner.style = "position:absolute; inset:0; background:rgba(255,142,145,0.2); z-index:500; display:flex; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold; text-shadow:2px 2px 10px rgba(0,0,0,0.5); pointer-events:none;";
+    endBanner.innerText = "GAME OVER";
+    document.getElementById('game').appendChild(endBanner);
+}
 </script>
 </body>
 </html>
