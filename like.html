@@ -173,7 +173,7 @@
         updateUI();
     }
     // --- 核心行動邏輯 (數值平衡版) ---
-    function handleAction(a) {
+   function handleAction(a) {
         if(a === "晚安睡覺") { nextDay(); return; }
         if(a === "訊息聊天") { 
             hp -= 3; love += 3; lastChatDay = day; noChatStreak = 0; 
@@ -185,14 +185,8 @@
         if (isGame) {
             hour += 1;
             gamePlayCount++;
-            // 邏輯：玩10場遊戲+1技術
-            if (gamePlayCount % 10 === 0) {
-                skill++;
-            }
-            // 邏輯：玩6場遊戲-1讀書
-            if (gamePlayCount % 6 === 0) {
-                study--;
-            }
+            if (gamePlayCount % 10 === 0) skill++;
+            if (gamePlayCount % 6 === 0) study--;
 
             if (a === "三角洲") playDelta();
             else if (a === "傳說對決") playHonor();
@@ -200,7 +194,6 @@
             else if (a === "世界計畫") playPJSK();
         } 
         else if (a === "念書") {
-            // 邏輯：讀一次書3小時 +1讀書值
             hour += 3;
             hp -= 7;
             study++;
@@ -208,13 +201,22 @@
         }
 
         updateUI();
-        if(hp <= 0) { setTimeout(() => { alert("你累到直接昏睡過去了..."); nextDay(); }, 500); }
-        else { 
-            let maxH = (day % 7 === 0 || day % 7 === 6) ? 26 : 25; 
-            if(hour >= maxH) nextDay(); 
-        }
-    }
 
+        // 核心修正：動作完後立刻檢查狀態，若體力耗盡會自動執行 nextDay
+        setTimeout(() => {
+            if(hp <= 0) {
+                alert("體力耗盡，眼前一黑直接昏睡過去了...");
+                nextDay();
+            } else {
+                // 時間檢查
+                let maxH = (day % 7 === 0 || day % 7 === 6) ? 26 : 25; 
+                if(hour >= maxH) {
+                    alert("時間太晚了，該休息了。");
+                    nextDay();
+                }
+            }
+        }, 500); 
+    }
     // --- 遊戲內各項活動隨機事件 ---
     function playDelta() {
         hp -= 6;
@@ -236,7 +238,8 @@
             ]);
         }
     }
- function playHonor() {
+
+    function playHonor() {
         hp -= 7; 
         let win = Math.random() > 0.5; 
         love += win ? 4 : 1;
@@ -343,6 +346,8 @@
             else if(q.includes("胸圍")) say("shy", "既然是你...告訴你也沒關係，是 30D 喔。");
             else if(q.includes("身高")) { say("hold", "154cm。"); setTimeout(()=>alert("(想像孟孟靠在你肩膀上的樣子真可愛)"), 800); }
             else if(q.includes("體重")) say("angry", "44kg！敢嫌我重你就死定了。");
+            else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...嗚。");
+            else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
             else if(q.includes("類型")) say("like", "現在的話，喜歡個性像你一樣的。");
             else if(q.includes("愛吃的")) say("happy", "最喜歡薯條跟杏鮑菇了！");
             else if(q.includes("飲料")) say("wink", "想喝酒～手搖也喜歡，但想跟你一起喝。");
@@ -354,21 +359,27 @@
     }
     // --- 遊戲循環與隨機事件 ---
     function autoTick() {
-        // 如果遊戲結束、沒體力、或是選項視窗正開著，就不執行 autoTick
-        if(isDead || hp <= 0 || document.getElementById('opts').style.display === 'flex') return;
+        if(isDead) return;
+        
+        // 如果體力沒了，點擊時直接觸發 handleAction 的檢查邏輯，而不是直接 return 導致畫面卡住
+        if(hp <= 0) {
+            alert("妳累到動不了了...");
+            nextDay();
+            return;
+        }
 
         const o = document.getElementById('opts'); 
+        if(o.style.display === 'flex') return; // 選單開著就不重複觸發
+
         o.innerHTML = "";
-        
-        // 增加一個關閉按鈕或是自動判斷
         const act = ["訊息聊天", "三角洲", "傳說對決", "麻將/拉密", "世界計畫", "念書", "晚安睡覺"];
         act.forEach(a => {
             let b = document.createElement('button'); 
             b.className = 'btn'; 
             b.innerText = a;
             b.onclick = (e) => { 
-                e.stopPropagation(); // 防止點擊事件穿透回 msg-box
-                o.style.display = 'none'; 
+                e.stopPropagation();
+                o.style.display='none'; 
                 handleAction(a); 
             }; 
             o.appendChild(b);
