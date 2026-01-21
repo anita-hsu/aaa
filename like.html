@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>女生相處模擬器測試版1</title>
+    <title>女生相處模擬器2</title>
     <style>
         :root { --p: #ff8e91; --p-dark: #ff6b6e; }
         body { margin: 0; background: #1a1a1a; font-family: "Microsoft JhengHei", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; overflow: hidden; touch-action: manipulation; }
@@ -322,19 +322,30 @@ function say(face, txt) {
         // 核心修正：動作完後立刻檢查狀態，若體力耗盡會自動執行 nextDay
         // 修正後的 handleAction 結尾部分
 setTimeout(() => {
-    if(hp <= 0) {
+    if (hp <= 0) {
         collapseCount++;
-        alert("體力耗盡，眼前一黑直接昏睡過去了...");
-        if(collapseCount >= 3) {
-            showEnding("sad", "你因為連續過勞體力透支住院了，這10天計畫告吹。", "overworked");
-            return;
+        
+        // 第 4 次昏倒：解鎖成就，但不結束遊戲，依然執行 nextDay
+        if (collapseCount >= 4) {
+            // 解鎖成就 (假設你的 unlockEnding 已經寫在某處)
+            unlockEnding("overworked"); 
+            
+            // 讓孟孟說話提醒玩家
+            say("sad", "你已經倒下四次了... 不要太勉強自己知道嗎？這次就算了，下次要注意喔！");
+            
+            // 注意：這裡「不放 return」，讓它繼續往下走執行 nextDay()
         }
+
+        // 所有的昏倒（包含第 4 次）都會彈出警告並跳到隔天
+        alert(`體力耗盡，眼前一黑直接昏睡過去了... (累計次數: ${collapseCount})`);
         nextDay();
-    }else if (hour >= 26) {
-                alert("太晚了，孟孟催你去休息。");
-                nextDay();
-            }
-        }, 800);
+
+    } else if (hour >= 26) {
+        // 超過凌晨 2 點：強制睡覺
+        alert("太晚了，孟孟催你去休息。");
+        nextDay();
+    }
+}, 800);
     }
     // --- 遊戲內各項活動隨機事件 ---
     function playDelta() {
@@ -415,6 +426,7 @@ setTimeout(() => {
 
     function getReply(q) {
         const r = (arr) => arr[Math.floor(Math.random()*arr.length)];
+        hour += 1;
         // 低好感度 (<20)
         if (love < 20) {
             if(q.includes("瞞")) say("normal", "沒。");
