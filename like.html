@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>女生相處模擬器2</title>
+    <title>女生相處模擬器</title>
     <style>
         :root { --p: #ff8e91; --p-dark: #ff6b6e; }
         body { margin: 0; background: #1a1a1a; font-family: "Microsoft JhengHei", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; overflow: hidden; touch-action: manipulation; }
@@ -329,6 +329,7 @@ setTimeout(() => {
         if (collapseCount >= 4) {
             // 解鎖成就 (假設你的 unlockEnding 已經寫在某處)
             unlockEnding("overworked"); 
+            alert(`成就解鎖: 操勞過度 `);
             
             // 讓孟孟說話提醒玩家
             say("sad", "你已經倒下四次了... 不要太勉強自己知道嗎？這次就算了，下次要注意喔！");
@@ -337,7 +338,7 @@ setTimeout(() => {
         }
 
         // 所有的昏倒（包含第 4 次）都會彈出警告並跳到隔天
-        alert(`體力耗盡，眼前一黑直接昏睡過去了... (累計次數: ${collapseCount})`);
+        alert(`體力耗盡，眼前一黑直接昏睡過去了... `);
         nextDay();
 
     } else if (hour >= 26) {
