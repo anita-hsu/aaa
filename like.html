@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>女生相處模擬器</title>
+    <title>女生相處模擬器測試版1</title>
     <style>
         :root { --p: #ff8e91; --p-dark: #ff6b6e; }
         body { margin: 0; background: #1a1a1a; font-family: "Microsoft JhengHei", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; overflow: hidden; touch-action: manipulation; }
@@ -40,6 +40,20 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 40px); } to { opacity: 1; transform: translate(-50%, 0); } }
         
         input[type="range"] { width: 100%; accent-color: var(--p); margin: 10px 0; }
+        .ach-item {
+    padding: 15px;
+    border-radius: 10px;
+    background: #f0f0f0;
+    color: #999;
+    border: 1px dashed #ccc;
+    text-align: center;
+}
+.ach-item.unlocked {
+    background: #fff5f5;
+    color: var(--p);
+    border: 1px solid var(--p);
+    font-weight: bold;
+}
     </style>
 </head>
 <body>
@@ -48,22 +62,22 @@
     <div id="setup-avatar" class="setup-screen">
         <h2>第一步：決定你的形象</h2>
         <div class="select-group"><label>髮型</label><select id="look-hair">
-            <option value="0">中分</option><option value="3" selected>微分碎蓋</option>
+            <option value="0">中分</option><option value="3">微分碎蓋</option>
             <option value="-1">長髮</option><option value="-2">平頭</option>
-            <option value="-5">光頭</option><option value="0">飛機頭</option>
+            <option value="-5" selected>光頭</option><option value="0">飛機頭</option>
             <option value="1">捲毛</option>
         </select></div>
         <div class="select-group"><label>眼神</label><select id="look-eye">
-            <option value="-1">無神</option><option value="3" selected>溫柔</option>
+            <option value="-1" selected>無神</option><option value="3">溫柔</option>
             <option value="-2">兇狠</option>
         </select></div>
         <div class="select-group"><label>身高</label><select id="look-height">
-            <option value="2">180以上</option><option value="3" selected>170~180</option>
-            <option value="1">160~170</option><option value="0">160以下</option>
+            <option value="2">180以上</option><option value="3">170~180</option>
+            <option value="1" selected>160~170</option><option value="0">160以下</option>
         </select></div>
         <div class="select-group"><label>個性風格</label><select id="look-personality">
-            <option value="1">高冷</option><option value="3" selected>溫柔</option>
-            <option value="2">幽默</option>
+            <option value="1">高冷</option><option value="3">溫柔</option>
+            <option value="2" selected>幽默</option>
         </select></div>
         <p style="font-size:0.85rem; color:#888; background:#fff5f5; padding:12px; border-radius:8px; width: 100%;">雖然外貌不是最重要的，但還是會影響好感喔</p>
         <button class="btn" onclick="nextToStats()">下一步：分配能力值</button>
@@ -84,13 +98,21 @@
     </div>
 
     <div id="ui" style="display:none">
-        <div class="stat">🕒 D-<span id="d-ui">1</span> <span id="h-ui">20:00</span></div>
-        <div class="stat">⚡ <span id="e-ui">30</span></div>
-        <div class="stat">🎓 <span id="st-ui">0</span></div>
-        <div class="stat">🎮 <span id="sk-ui">0</span></div>
-        <div class="stat">♥️ <span id="lv-ui">0</span></div>
+    <div class="stat">🕒 D-<span id="d-ui">1</span> <span id="h-ui">20:00</span></div>
+    <div class="stat">⚡ <span id="e-ui">30</span></div>
+    <div class="stat">🎓 <span id="st-ui">0</span></div>
+    <div class="stat">🎮 <span id="sk-ui">0</span></div>
+    <div class="stat">♥️ <span id="lv-ui">0</span></div>
+    <div class="stat" style="cursor:pointer; background:var(--p); color:white; pointer-events:auto;" onclick="toggleAchPage()">🏆 成就</div>
     </div>
 
+    <div id="ach-page" style="display:none; position:absolute; inset:0; background:rgba(255,255,255,0.98); z-index:400; padding:20px; flex-direction:column; align-items:center; overflow-y:auto;">
+    <h2 style="color:var(--p);">🌟 結局收集圖鑑</h2>
+    <p>總收集率：<span id="ach-rate">0%</span></p>
+    <div id="ach-list" style="width:100%; display:flex; flex-direction:column; gap:10px;">
+        </div>
+    <button class="btn" style="margin-top:20px;" onclick="toggleAchPage()">返回遊戲</button>
+</div>
     <img id="f-normal" class="sprite" src="normal.png">
     <img id="f-happy" class="sprite" src="happy.png">
     <img id="f-sad" class="sprite" src="sad.png">
@@ -103,6 +125,7 @@
     <img id="f-wink" class="sprite" src="wink.png">
     <img id="f-hold" class="sprite" src="hold.png">
     <img id="f-like" class="sprite" src="like.png">
+    <img id="f-sleep" class="sprite" src="sleep.png">
 
     <div id="opts"></div>
     <div id="msg-box" style="display:none" onclick="autoTick()">
@@ -117,6 +140,8 @@
     let study = 0, skill = 0, lookScore = 0;
     let gamePlayCount = 0, lastChatDay = 0, noChatStreak = 0;
     let isDead = false;
+    let collapseCount = 0; // 昏倒次數
+    let giftCount = 0;     // 送禮次數
 
     // --- 初始系統邏輯 ---
     function nextToStats() {
@@ -150,28 +175,120 @@
         checkSchoolMeet();
     }
 
-    function updateUI() {
-        document.getElementById('d-ui').innerText = day;
-        document.getElementById('h-ui').innerText = (hour >= 24 ? hour-24 : hour) + ":00";
-        document.getElementById('e-ui').innerText = Math.max(0, hp);
-        document.getElementById('st-ui').innerText = study;
-        document.getElementById('sk-ui').innerText = skill;
-        document.getElementById('lv-ui').innerText = love;
-    }
+   // --- 自動存檔 ---
+function saveGame() {
+    const gameState = {
+        love, hp, day, hour, study, skill, lookScore, 
+        gamePlayCount, lastChatDay, noChatStreak, isDead, giftCount, collapseCount
+    };
+    localStorage.setItem('meng_game_progress', JSON.stringify(gameState));
+}
 
-   function say(face, txt) {
-        // 1. 清除所有表情，顯示新表情
-        document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
-        const img = document.getElementById('f-' + face);
-        if(img) img.classList.add('active');
-        
-        // 2. 更新文字與 UI
-        document.getElementById('text').innerText = txt;
-        
-        // 3. 強制讓對話框顯示（防止被隱藏）
-        document.getElementById('msg-box').style.display = 'block';
-        updateUI();
+// 修改原有的 updateUI，在最後加入 saveGame()
+function updateUI() {
+    document.getElementById('d-ui').innerText = day;
+    document.getElementById('h-ui').innerText = (hour >= 24 ? hour-24 : hour) + ":00";
+    document.getElementById('e-ui').innerText = Math.max(0, hp);
+    document.getElementById('st-ui').innerText = study;
+    document.getElementById('sk-ui').innerText = skill;
+    document.getElementById('lv-ui').innerText = love;
+    
+    updateBackground();
+    saveGame(); // 每次數值變動就存檔
+}
+
+// 修正背景顏色：將其移出 updateUI 變成獨立函數
+function updateBackground() {
+    const gameEl = document.getElementById('game');
+    // 晚上 10 點到凌晨 4 點：深夜模式 (深藍/黑)
+    if (hour >= 22 || hour < 5) {
+        gameEl.style.background = "linear-gradient(180deg, #1a2a6c, #000000)";
+    } 
+    // 傍晚 5 點到晚上 9 點：黃昏模式 (橘紅)
+    else if (hour >= 17) {
+        gameEl.style.background = "linear-gradient(180deg, #ff9988, #ee6644)";
     }
+    // 白天模式 (淡粉/白)
+    else {
+        gameEl.style.background = "#fff5f5"; 
+    }
+}
+
+// --- 成就系統邏輯 (確保在全域範圍) ---
+
+const ENDING_CONFIG = {
+    'scholar': '🎓 頂大學霸：考上理想大學',
+    'pro_gamer': '🎮 電競大神：轉戰職業聯賽',
+    'true_love': '♥️ 真愛結局：最了解她的你',
+    'bad_end': '💔 遺憾終場：只是好人一個',
+    'forgot_food': '🍟 薯條之憾：飲食習慣不合',
+    'overworked': '🚑 操勞過度：這只是個遊戲，保重身體', // 體力多次歸零觸發
+    'hermit': '🌵 孤傲求敗：完全沒有與她互動',      // Love = 0 且沒聊過天
+    'simper': '🤡 極致舔狗：好感極高但能力值極低',   // Love > 90 但 Study/Skill < 5
+    'rich_guy': '💎 課金戰士：買了太多點心送她'      // 觸發多次送點心事件
+};
+
+function toggleAchPage() {
+    const page = document.getElementById('ach-page');
+    if (page.style.display === 'none' || page.style.display === '') {
+        renderAchievements();
+        page.style.display = 'flex';
+    } else {
+        page.style.display = 'none';
+    }
+}
+
+function renderAchievements() {
+    const unlocked = JSON.parse(localStorage.getItem('meng_endings') || '[]');
+    const listEl = document.getElementById('ach-list');
+    const rateEl = document.getElementById('ach-rate');
+    
+    listEl.innerHTML = "";
+    Object.keys(ENDING_CONFIG).forEach(id => {
+        const div = document.createElement('div');
+        div.className = `ach-item ${unlocked.includes(id) ? 'unlocked' : ''}`;
+        div.innerText = unlocked.includes(id) ? ENDING_CONFIG[id] : "？？？ 未解鎖";
+        listEl.appendChild(div);
+    });
+
+    const rate = Math.floor((unlocked.length / Object.keys(ENDING_CONFIG).length) * 100);
+    rateEl.innerText = rate + "%";
+}
+
+function unlockEnding(eid) {
+    let current = JSON.parse(localStorage.getItem('meng_endings') || '[]');
+    if (!current.includes(eid)) {
+        current.push(eid);
+        localStorage.setItem('meng_endings', JSON.stringify(current));
+    }
+}
+
+   let typeTimer = null;
+
+function say(face, txt) {
+    // 1. 清除舊表情，顯示新表情
+    document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
+    const img = document.getElementById('f-' + face);
+    if(img) img.classList.add('active');
+
+    // 2. 打字機邏輯
+    const textEl = document.getElementById('text');
+    textEl.innerText = ""; // 先清空文字
+    if(typeTimer) clearInterval(typeTimer); // 清除上一次還沒跑完的計時器
+
+    let i = 0;
+    typeTimer = setInterval(() => {
+        textEl.innerText += txt.charAt(i);
+        i++;
+        if (i >= txt.length) {
+            clearInterval(typeTimer);
+        }
+    }, 50); // 每 50 毫秒跳一個字
+
+    document.getElementById('msg-box').style.display = 'block';
+    updateUI();
+    updateBackground(); // 每次說話順便檢查背景
+}
     // --- 核心行動邏輯 (數值平衡版) ---
    function handleAction(a) {
         if(a === "晚安睡覺") { nextDay(); return; }
@@ -180,7 +297,7 @@
             showChatMenu(); return; 
         }
 
-        const isGame = ["三角洲", "傳說對決", "麻將/拉密", "世界計畫"].includes(a);
+        const isGame = ["三角洲", "傳說對決", "麻將", "世界計畫"].includes(a);
         
         if (isGame) {
             hour += 1;
@@ -190,7 +307,7 @@
 
             if (a === "三角洲") playDelta();
             else if (a === "傳說對決") playHonor();
-            else if (a === "麻將/拉密") playTable();
+            else if (a === "麻將") playTable();
             else if (a === "世界計畫") playPJSK();
         } 
         else if (a === "念書") {
@@ -203,19 +320,20 @@
         updateUI();
 
         // 核心修正：動作完後立刻檢查狀態，若體力耗盡會自動執行 nextDay
-        setTimeout(() => {
-            if(hp <= 0) {
-                alert("體力耗盡，眼前一黑直接昏睡過去了...");
-                nextDay();
-            } else {
-                // 時間檢查
-                let maxH = (day % 7 === 0 || day % 7 === 6) ? 26 : 25; 
-                if(hour >= maxH) {
-                    alert("時間太晚了，該休息了。");
-                    nextDay();
-                }
-            }
-        }, 500); 
+        // 修正後的 handleAction 結尾部分
+setTimeout(() => {
+    if(hp <= 0) {
+        collapseCount++;
+        alert("體力耗盡，眼前一黑直接昏睡過去了...");
+        if(collapseCount >= 3) {
+            showEnding("sad", "你因為連續過勞體力透支住院了，這10天計畫告吹。", "overworked");
+            return;
+        }
+        nextDay();
+    } else {
+        // ... 原有的時間檢查
+    }
+}, 500);
     }
     // --- 遊戲內各項活動隨機事件 ---
     function playDelta() {
@@ -304,15 +422,15 @@
             else if(q.includes("胸") || q.includes("腰")) say("angry", "變態，不想理你。");
             else if(q.includes("身") || q.includes("體重") || q.includes("生日")) say("annoyed", "那是隱私吧？");
             else if(q.includes("類型")) say("normal", "不關你的事吧。");
+            else if(q.includes("晚餐")) say("normal", "隨便吃吃。");
             else if(q.includes("吃素")) say("normal", "因為肉的油會讓我想吐。");
             else if(q.includes("吃") || q.includes("喝")) say("normal", "幹嘛？你要請我喔？");
             else if(q.includes("興趣")) say("normal", "唱歌、出去玩。");
             else if(q.includes("學校")) say("annoyed", "就那樣，沒什麼好說的。");
-            else if(q.includes("晚餐")) say("normal", "隨便吃吃。");
             else if(q.includes("室友")) say("normal", "還行。");
         } 
-        // 中好感度 (20-60)
-        else if (love <= 60) {
+        // 中好感度 (20-80)
+        else if (love <= 80) {
             if(q.includes("瞞")) say("hold", r(["嗯...目前沒有", "覺得你可(ㄅㄣˋ)愛(ㄅㄣˋ)算不算", "其實我不像你想的那麼單純"]));
             else if(q.includes("好感度")) say("wink", "你猜猜看啊？猜對沒獎勵。");
             else if(q.includes("在幹嘛")) say("think", "在發呆，順便回你訊息。");
@@ -320,17 +438,17 @@
             else if(q.includes("身高")) say("annoyed", "154cm，不准笑我矮。");
             else if(q.includes("體重")) say("shy", "44kg...最近好像胖了。");
             else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...嗚。");
-            else if(q.includes("生日")) say("happy", "2/21！記好了喔，到時候要送禮物。");
+            else if(q.includes("生日")) say("happy", "2/21！記好了喔。");
+            else if(q.includes("晚餐")) say("normal", "隨便吃點滷味。");
             else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
             else if(q.includes("類型")) say("think", "高高的、聰明的、可以的話要溫柔體貼一點。");
             else if(q.includes("吃")) say("happy", "滷味、炸的，這些最讚了。");
             else if(q.includes("喝")) say("happy", "我不挑，你買的都好。");
             else if(q.includes("興趣")) say("happy", "唱歌、出去玩，或是打打遊戲。");
             else if(q.includes("學校")) say("normal", "今天還算平淡囉。");
-            else if(q.includes("晚餐")) say("normal", "隨便吃點滷味。");
             else if(q.includes("室友")) say("normal", "關係還不錯啦。");
         } 
-        // 高好感度 (>60)
+        // 高好感度 (>80)
         else {
             if(q.includes("瞞")) {
                 say("like", "私はあなたが好きです");
@@ -344,9 +462,24 @@
             else if(q.includes("好感度")) say("happy", "應該...比你想的還要高很多喔。");
             else if(q.includes("在幹嘛")) say("sexy", "在想你呀，不行嗎？");
             else if(q.includes("胸圍")) say("shy", "既然是你...告訴你也沒關係，是 30D 喔。");
-            else if(q.includes("身高")) { say("hold", "154cm。"); setTimeout(()=>alert("(想像孟孟靠在你肩膀上的樣子真可愛)"), 800); }
-            else if(q.includes("體重")) say("angry", "44kg！敢嫌我重你就死定了。");
+else if(q.includes("身高")) { 
+    // 1. 先說話並換成 hold 表情
+    say("hold", "154cm。"); 
+
+    setTimeout(() => {
+        // 2. 切換成 sleep 表情（或是任何你想要的圖片）
+        document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
+        const sleepImg = document.getElementById('f-sleep'); // 確保 HTML 有這個 ID
+        if(sleepImg) sleepImg.classList.add('active');
+
+        // 3. 稍微延遲一點點再跳 alert，確保圖片已經渲染出來
+        setTimeout(() => {
+            alert("(想像孟孟靠在你肩膀上的樣子真可愛)");
+        }, 100); 
+    }, 800); 
+}            else if(q.includes("體重")) say("angry", "44kg！敢嫌我重你就死定了。");
             else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...嗚。");
+            else if(q.includes("生日")) say("happy", "2/21！記好了喔，到時候要送禮物。");
             else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
             else if(q.includes("類型")) say("like", "現在的話，喜歡個性像你一樣的。");
             else if(q.includes("愛吃的")) say("happy", "最喜歡薯條跟杏鮑菇了！");
@@ -363,7 +496,7 @@
         
         // 如果體力沒了，點擊時直接觸發 handleAction 的檢查邏輯，而不是直接 return 導致畫面卡住
         if(hp <= 0) {
-            alert("妳累到動不了了...");
+            alert("累到動不了了...");
             nextDay();
             return;
         }
@@ -372,7 +505,7 @@
         if(o.style.display === 'flex') return; // 選單開著就不重複觸發
 
         o.innerHTML = "";
-        const act = ["訊息聊天", "三角洲", "傳說對決", "麻將/拉密", "世界計畫", "念書", "晚安睡覺"];
+        const act = ["訊息聊天", "三角洲", "傳說對決", "麻將", "世界計畫", "念書", "晚安睡覺"];
         act.forEach(a => {
             let b = document.createElement('button'); 
             b.className = 'btn'; 
@@ -405,7 +538,12 @@
                     if(love < 30) say("think", "我今天想自己待著耶...下次吧。");
                     else { love += 5; study += 2; say("like", "好呀，那我們去圖書館？"); }
                 }},
-                {t: "給她買份點心", f: () => { love += 10; say("happy", "哇！你怎麼知道我剛好想吃這個！"); }}
+                // 修改 checkSchoolMeet 裡面的送點心選項
+{t: "給她買份點心", f: () => { 
+    love += 10; 
+    giftCount++; // 增加送禮計數
+    say("happy", "哇！你怎麼知道我剛好想吃這個！"); 
+}}
             ]);
         } else {
             hour = isWeekday ? 20 : 13;
@@ -421,27 +559,44 @@
     }
 
     // --- 結局判定與考驗 ---
+    // --- 結局判定與考驗 (完整邏輯版) ---
     function determineEnding() {
-        let finalLove = love;
-        // 外貌加成判定
-        if (lookScore < 0) finalLove *= 0.8;
-        if (lookScore > 8) finalLove *= 1.1;
+    let finalLove = love;
+    if (lookScore < 0) finalLove *= 0.8;
+    if (lookScore > 8) finalLove *= 1.1;
 
-        // 基本門檻檢查
-        if (study < 7 || skill < 10) {
-            showEnding("normal", "我還是覺得你應該多花點時間在正事上。我們當普通朋友就好。");
-        } else if (finalLove > 70) {
+    // 1. 隱藏結局：極致舔狗 (好感超高但自己太廢)
+    if (finalLove > 90 && study < 5 && skill < 5) {
+        showEnding("annoyed", "孟孟：「雖然你對我很好，但我覺得你對自己的人生太不負責任了。再見。」", "simper");
+    }
+    // 2. 隱藏結局：孤傲求敗 (完全不聊天)
+    else if (lastChatDay === 0 || love <= 0) {
+        showEnding("normal", "這10天你只在乎你自己，再見。", "hermit");
+    }
+    // 3. 隱藏結局：課金戰士 (送禮次數多)
+    else if (giftCount >= 5) {
+        showEnding("wink", "孟孟：「雖然你一直送我東西我很開心，但我們要的是真心喔！」", "rich_guy");
+    }
+    // 4. 數值結局：頂大學霸
+    else if (study >= 22) { // 提高難度
+        showEnding("happy", "孟孟：「聽說你考上了全國第一志願！你的人生才要開始呢！」", "scholar");
+    } 
+    // 5. 數值結局：電競大神
+    else if (skill >= 22) {
+        showEnding("play", "孟孟：「看你在職業賽場上拿冠軍，我真的替你高興！」", "pro_gamer");
+    }
+    // 6. 正常真愛考驗
+        else if (finalLove > 70 && study > 13 && skill > 12) {
             say("hold", "這10天真的很快呢...在結束之前，我想問你一個問題，看看你有多了解我。");
             
             setTimeout(() => {
-                // 定義三個問題池
                 const questions = [
                     {
                         q: "如果你手上有雞排跟薯條，你會給我吃哪個？",
                         opts: [
-                            {t: "1. 雞排", f: () => { say("annoyed", "我不吃雞排...你果然還是不夠了解我。當朋友吧。"); setTimeout(()=>showEnding("sad","【結局：不夠了解她的飲食】"), 2000); }},
+                            {t: "1. 雞排", f: () => { say("annoyed", "我不吃雞排...你果然還是不夠了解我。"); setTimeout(()=>showEnding("sad","【結局：不夠了解她的飲食】", "forgot_food"), 2000); }},
                             {t: "2. 薯條", f: () => { successEnding("沒錯！我最喜歡薯條了...你竟然一直都記得。"); }},
-                            {t: "3. 都給你", f: () => { say("sad", "雖然你很大方，但我吃素耶...肉的味道我真的不行。"); setTimeout(()=>showEnding("sad","【結局：被遺忘的素食習慣】"), 2000); }}
+                            {t: "3. 都給你", f: () => { say("sad", "雖然你很大方，但我吃素耶...肉的味道我真的不行。"); setTimeout(()=>showEnding("sad","【結局：被遺忘的素食習慣】", "forgot_food"), 2000); }}
                         ]
                     },
                     {
@@ -464,14 +619,14 @@
                     }
                 ];
 
-                // 隨機抽選一題
                 const randomQ = questions[Math.floor(Math.random() * questions.length)];
                 say("think", randomQ.q);
                 showChoice(randomQ.opts);
-                
             }, 1500);
-        } else {
-            showEnding("annoyed", "孟孟：「你是個好人，但我們感覺不太對，就這樣吧，再見。」");
+        } 
+        // 4. 好感度不足
+        else {
+            showEnding("annoyed", "孟孟：「你是個好人，但我們感覺不太對，就這樣吧，再見。」", "bad_end");
         }
     }
 
@@ -480,31 +635,128 @@
         say("shy", extraMsg);
         setTimeout(() => {
             say("like", "所以我好像真的真的，有點喜歡你了。");
-            showEnding("like", "【真愛結局：最了解我的你】");
+            setTimeout(() => {
+                showEnding("like", "【真愛結局：最了解我的你】", "true_love");
+            }, 2000);
         }, 2500);
     }
 
     // 輔助函式：答錯的反應
     function wrongBirthday() {
         say("sad", "那是誰的生日啊...？連這都記錯，我有點失望。");
-        setTimeout(()=>showEnding("sad","【結局：被遺忘的紀念日】"), 2000);
+        setTimeout(()=>showEnding("sad","【結局：遺憾終場：被遺忘的紀念日】", "bad_end"), 2000);
     }
 
     function wrongHero() {
         say("annoyed", "那隻我根本不常玩吧...看來你玩遊戲時都沒在看我。");
-        setTimeout(()=>showEnding("sad","【結局：沒默契的戰友】"), 2000);
+        setTimeout(()=>showEnding("sad","【結局：遺憾終場：沒默契的戰友】", "bad_end"), 2000);
     }
 
-    function showEnding(face, msg) {
-        isDead = true;
-        document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
-        const img = document.getElementById('f-' + face); if(img) img.classList.add('active');
-        document.getElementById('text').innerText = msg;
-        let banner = document.createElement('div');
-        banner.style = "position:absolute; inset:0; background:rgba(0,0,0,0.7); z-index:500; display:flex; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold; pointer-events:none;";
-        banner.innerText = "FINISH";
-        document.getElementById('game').appendChild(banner);
+    // 最終修正版的顯示結局函式
+    function showEnding(face, msg, eid = 'bad_end') {
+    isDead = true;
+    unlockEnding(eid); // 解鎖圖鑑
+    
+    // 儲存目前的狀態（包含 isDead），防止刷新頁面後結局消失
+    saveGame();
+
+    // 處理 UI 顯示
+    document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
+    const img = document.getElementById('f-' + face); 
+    if(img) img.classList.add('active');
+    
+    document.getElementById('text').innerText = msg;
+    document.getElementById('opts').style.display = 'none'; 
+
+    // 建立一個覆蓋全螢幕的結局容器
+    let endContainer = document.createElement('div');
+    endContainer.id = "end-screen";
+    endContainer.style = "position:absolute; inset:0; background:rgba(0,0,0,0.8); z-index:500; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white;";
+    
+    // 結局標題
+    let title = document.createElement('div');
+    title.style = "font-size:3.5rem; font-weight:bold; margin-bottom:20px; color:var(--p);";
+    title.innerText = "FINISH";
+    
+    // 重新開始按鈕
+    let restartBtn = document.createElement('button');
+    restartBtn.className = 'btn';
+    restartBtn.innerText = "開始新輪迴 (清除進度)";
+    restartBtn.onclick = () => {
+        if(confirm("確定要清除目前進度，開始新的一局嗎？(成就圖鑑會保留)")){
+            localStorage.removeItem('meng_game_progress'); // 只刪除進度
+            location.reload(); // 重新整理網頁
+        }
+    };
+
+    endContainer.appendChild(title);
+    endContainer.appendChild(restartBtn);
+    document.getElementById('game').appendChild(endContainer);
+}
+
+   function showEnding(face, msg, endingID = 'bad_end') {
+    isDead = true;
+    unlockEnding(endingID); // 自動解鎖圖鑑
+    
+    document.querySelectorAll('.sprite').forEach(s => s.classList.remove('active'));
+    const img = document.getElementById('f-' + face); 
+    if(img) img.classList.add('active');
+    
+    document.getElementById('text').innerText = msg;
+    document.getElementById('opts').style.display = 'none'; // 隱藏所有選項
+    
+    // 增加一個重新開始的按鈕
+    let restartBtn = document.createElement('button');
+    restartBtn.className = 'btn';
+    restartBtn.style.position = "absolute";
+    restartBtn.style.bottom = "150px";
+    restartBtn.style.zIndex = "600";
+    restartBtn.innerText = "重新開始下一輪";
+    restartBtn.onclick = () => location.reload();
+    document.getElementById('game').appendChild(restartBtn);
+
+    let banner = document.createElement('div');
+    banner.style = "position:absolute; inset:0; background:rgba(0,0,0,0.7); z-index:500; display:flex; align-items:center; justify-content:center; color:white; font-size:3rem; font-weight:bold; pointer-events:none;";
+    banner.innerText = "FINISH";
+    document.getElementById('game').appendChild(banner);
+
+    
+}
+ // --- 讀取進度 ---
+function loadGame() {
+    const savedData = localStorage.getItem('meng_game_progress');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        
+        // 如果遊戲已經結束，就不自動跳過選人畫面，讓玩家可以重新開始
+        if (data.isDead) return; 
+
+        // 恢復變數
+        love = data.love;
+        hp = data.hp;
+        day = data.day;
+        hour = data.hour;
+        study = data.study;
+        skill = data.skill;
+        lookScore = data.lookScore;
+        gamePlayCount = data.gamePlayCount;
+        lastChatDay = data.lastChatDay;
+        noChatStreak = data.noChatStreak;
+        giftCount = data.giftCount || 0;
+        collapseCount = data.collapseCount || 0;
+
+        // 跳過初始畫面直接進遊戲
+        document.getElementById('setup-avatar').style.display = 'none';
+        document.getElementById('setup-stats').style.display = 'none';
+        document.getElementById('ui').style.display = 'flex';
+        document.getElementById('msg-box').style.display = 'block';
+        updateUI();
+        say("happy", "歡迎回來！我們繼續吧？");
     }
+}
+
+// 在視窗載入後執行
+window.onload = loadGame;   
 </script>
 </body>
 </html>
