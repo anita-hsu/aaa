@@ -330,10 +330,11 @@ setTimeout(() => {
             return;
         }
         nextDay();
-    } else {
-        // ... 原有的時間檢查
-    }
-}, 500);
+    }else if (hour >= 26) {
+                alert("太晚了，孟孟催你去休息。");
+                nextDay();
+            }
+        }, 800);
     }
     // --- 遊戲內各項活動隨機事件 ---
     function playDelta() {
