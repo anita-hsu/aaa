@@ -126,6 +126,11 @@
     <img id="f-hold" class="sprite" src="hold.png">
     <img id="f-like" class="sprite" src="like.png">
     <img id="f-sleep" class="sprite" src="sleep.png">
+    <img id="f-hate" class="sprite" src="hate.png">
+    <img id="f-hmm" class="sprite" src="hmm.png">
+    <img id="f-excited" class="sprite" src="excited.png">
+    <img id="f-shock" class="sprite" src="shock.png">
+
 
     <div id="opts"></div>
     <div id="msg-box" style="display:none" onclick="autoTick()">
@@ -401,13 +406,13 @@ setTimeout(() => {
     }
     function playPJSK() {
         hp -= 4; love += 3;
-        const res = [{f:"happy",t:"耶~Full Combo！"}, {f:"annoyed",t:"可惡差一點點 AP..."}, {f:"sad",t:"嗚嗚死掉了。"}, {f:"wink",t:"哇出四星了！"}];
+        const res = [{f:"happy",t:"耶~Full Combo！"}, {f:"hmm",t:"可惡差一點點 AP..."}, {f:"sad",t:"嗚嗚死掉了。"}, {f:"excited",t:"哇出四星了！"}];
         let r = res[Math.floor(Math.random()*res.length)];
         say(r.f, r.t);
     }
     function playTable() {
         hp -= 5; let win = Math.random() > 0.5; love += win ? 5 : 0;
-        const res = [{f:"wink",t:"哈哈你放槍！"}, {f:"happy",t:"好耶，胡了！"}, {f:"sad",t:"運氣真差，手氣好臭。"}];
+        const res = [{f:"happy",t:"哈哈你放槍！"}, {f:"happy",t:"好耶，胡了！"}, {f:"hate",t:"運氣真差，手氣好臭。"}];
         let r = res[Math.floor(Math.random()*res.length)];
         say(r.f, r.t);
     }
@@ -444,7 +449,7 @@ setTimeout(() => {
             else if(q.includes("在幹嘛")) say("think", "在想等一下要幹嘛。");
             else if(q.includes("胸") || q.includes("腰")) say("angry", "變態，不想理你。");
             else if(q.includes("身") || q.includes("體重") || q.includes("生日")) say("annoyed", "那是隱私吧？");
-            else if(q.includes("類型")) say("normal", "不關你的事吧。");
+            else if(q.includes("類型")) say("hate", "不關你的事吧。");
             else if(q.includes("晚餐")) say("normal", "隨便吃吃。");
             else if(q.includes("吃素")) say("normal", "因為肉的油會讓我想吐。");
             else if(q.includes("吃") || q.includes("喝")) say("normal", "幹嘛？你要請我喔？");
@@ -452,26 +457,26 @@ setTimeout(() => {
             else if(q.includes("學校")) say("annoyed", "就那樣，沒什麼好說的。");
             else if(q.includes("室友")) say("normal", "還行。");
         } 
-        // 中好感度 (20-80)
-        else if (love <= 80) {
+        // 中好感度 (20-90)
+        else if (love <= 90) {
             if(q.includes("瞞")) say("hold", r(["嗯...目前沒有", "覺得你可(ㄅㄣˋ)愛(ㄅㄣˋ)算不算", "其實我不像你想的那麼單純"]));
-            else if(q.includes("好感度")) say("wink", "你猜猜看啊？猜對沒獎勵。");
-            else if(q.includes("在幹嘛")) say("think", "在發呆，順便回你訊息。");
-            else if(q.includes("胸")) say("angry", "你是色狼嗎！");
-            else if(q.includes("身高")) say("annoyed", "154cm，不准笑我矮。");
+            else if(q.includes("好感度")) say("wink", r(["你猜", "不好說" , "是秘密" , "反正不是0"]));
+            else if(q.includes("在幹嘛")) say("think", r(["在發呆，順便回你訊息。", "在想明天午餐吃什麼" , "想打遊戲"]));
+            else if(q.includes("胸")) say("angry", r(["你是色狼嗎！", "這是可以問的嗎" , "性騷擾" , "沒禮貌" ]));
+            else if(q.includes("身高")) say("hmm", r(["154cm，不准笑我矮。", "總之跳起來就比你高了" , "我180"]));
             else if(q.includes("體重")) say("shy", "44kg...最近好像胖了。");
-            else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...嗚。");
-            else if(q.includes("生日")) say("happy", "2/21！記好了喔。");
-            else if(q.includes("晚餐")) say("normal", "隨便吃點滷味。");
+            else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...。");
+            else if(q.includes("生日")) say("happy", r(["2/21！記好了喔。", "是小雙魚"]));
+            else if(q.includes("晚餐")) say("normal", r(["隨便吃點減肥。", "去一中街吃的" , "去旱溪夜市吃的" , "去學校外面吃的"]));
             else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
             else if(q.includes("類型")) say("think", "高高的、聰明的、可以的話要溫柔體貼一點。");
-            else if(q.includes("吃")) say("happy", "滷味、炸的，這些最讚了。");
+            else if(q.includes("吃")) say("excited", "滷味、炸的，這些最讚了。");
             else if(q.includes("喝")) say("happy", "我不挑，你買的都好。");
             else if(q.includes("興趣")) say("happy", "唱歌、出去玩，或是打打遊戲。");
             else if(q.includes("學校")) say("normal", "今天還算平淡囉。");
             else if(q.includes("室友")) say("normal", "關係還不錯啦。");
         } 
-        // 高好感度 (>80)
+        // 高好感度 (>90)
         else {
             if(q.includes("瞞")) {
                 say("like", "私はあなたが好きです");
@@ -484,7 +489,7 @@ setTimeout(() => {
             }
             else if(q.includes("好感度")) say("happy", "應該...比你想的還要高很多喔。");
             else if(q.includes("在幹嘛")) say("sexy", "在想你呀，不行嗎？");
-            else if(q.includes("胸圍")) say("shy", "既然是你...告訴你也沒關係，是 30D 喔。");
+            else if(q.includes("胸圍")) say("shy", r(["既然是你...告訴你也沒關係 是▉▉▉", "比你想像的大就對了"]));
 else if(q.includes("身高")) { 
     // 1. 先說話並換成 hold 表情
     say("hold", "154cm。"); 
@@ -500,15 +505,15 @@ else if(q.includes("身高")) {
             alert("(想像孟孟靠在你肩膀上的樣子真可愛)");
         }, 100); 
     }, 800); 
-}            else if(q.includes("體重")) say("angry", "44kg！敢嫌我重你就死定了。");
-            else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...嗚。");
-            else if(q.includes("生日")) say("happy", "2/21！記好了喔，到時候要送禮物。");
+}            else if(q.includes("體重")) say("hmm", "44kg！敢嫌我重你就死定了。");
+            else if(q.includes("腰圍")) say("sad", "61cm，之前明明才50幾的...嗚。");
+            else if(q.includes("生日")) say("shy", r(["2/21！記好了喔，你忘記我會難過的。", "2/21 沒有你的祝福我會傷心的"]));
             else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
             else if(q.includes("類型")) say("like", "現在的話，喜歡個性像你一樣的。");
-            else if(q.includes("愛吃的")) say("happy", "最喜歡薯條跟杏鮑菇了！");
+            else if(q.includes("愛吃的")) say("excited", "最喜歡薯條跟杏鮑菇了！");
             else if(q.includes("飲料")) say("wink", "想喝酒～手搖也喜歡，但想跟你一起喝。");
-            else if(q.includes("興趣")) say("happy", "出去玩、吃東西、睡覺...還有跟你聊天。");
-            else if(q.includes("學校")) say("happy", r(["今天跟朋友在廁所自拍，結果有人進來嚇一跳！", "今天考試考得不太好...安慰我。", "今天被老師誇獎了喔！快誇我！", "朋友送我他做的布丁，超好吃的。"]));
+            else if(q.includes("興趣")) say("hold", "出去玩、吃東西、睡覺...還有跟你聊天。");
+            else if(q.includes("學校")) say("hmm", r(["今天跟朋友在廁所自拍，結果有人進來嚇一跳！", "今天考試考得不太好 可以教教我嗎", "今天被老師誇獎了喔！快誇我！", "朋友送我他做的布丁，超好吃的。"]));
             else if(q.includes("晚餐")) say("happy", r(["麥當勞","滷味","泡麵","義大利麵","火鍋","炒飯","炒麵","鹹水雞"]));
             else if(q.includes("室友")) say("happy", "很好啊 我跟他們聊天會提到你");
         }
@@ -567,12 +572,12 @@ else if(q.includes("身高")) {
 {t: "給她買份點心", f: () => { 
     love += 10; 
     giftCount++; // 增加送禮計數
-    say("happy", "哇！你怎麼知道我剛好想吃這個！"); 
+    say("excited", "哇！你怎麼知道我剛好想吃這個！"); 
 }}
             ]);
         } else {
             hour = isWeekday ? 20 : 13;
-            say("normal", isWeekday ? "晚上好呀，今天在學校好累喔。" : "下午好，假日要做什麼呢？");
+            say("happy", isWeekday ? "晚上好呀，今天上學辛苦了。" : "午安，今天要做什麼呢？");
         }
     }
 
@@ -583,7 +588,6 @@ else if(q.includes("身高")) {
         else { updateUI(); alert("第 " + day + " 天開始。"); checkSchoolMeet(); }
     }
 
-    // --- 結局判定與考驗 ---
     // --- 結局判定與考驗 (完整邏輯版) ---
     function determineEnding() {
     let finalLove = love;
@@ -596,11 +600,11 @@ else if(q.includes("身高")) {
     }
     // 2. 隱藏結局：孤傲求敗 (完全不聊天)
     else if (lastChatDay === 0 || love <= 0) {
-        showEnding("normal", "這10天你只在乎你自己，再見。", "hermit");
+        showEnding("hate", "這10天你只在乎你自己，再見。", "hermit");
     }
     // 3. 隱藏結局：課金戰士 (送禮次數多)
     else if (giftCount >= 5) {
-        showEnding("wink", "孟孟：「雖然你一直送我東西我很開心，但我們要的是真心喔！」", "rich_guy");
+        showEnding("wink", "孟孟：「雖然你一直送我東西我很開心，但我不想一直被餵胖」", "rich_guy");
     }
     // 4. 數值結局：頂大學霸
     else if (study >= 22) { // 提高難度
@@ -611,7 +615,7 @@ else if(q.includes("身高")) {
         showEnding("play", "孟孟：「看你在職業賽場上拿冠軍，我真的替你高興！」", "pro_gamer");
     }
     // 6. 正常真愛考驗
-        else if (finalLove > 70 && study > 13 && skill > 12) {
+        else if (finalLove > 70 && study >= 14 && skill >= 13) {
             say("hold", "這10天真的很快呢...在結束之前，我想問你一個問題，看看你有多了解我。");
             
             setTimeout(() => {
@@ -619,9 +623,9 @@ else if(q.includes("身高")) {
                     {
                         q: "如果你手上有雞排跟薯條，你會給我吃哪個？",
                         opts: [
-                            {t: "1. 雞排", f: () => { say("annoyed", "我不吃雞排...你果然還是不夠了解我。"); setTimeout(()=>showEnding("sad","【結局：不夠了解她的飲食】", "forgot_food"), 2000); }},
+                            {t: "1. 雞排", f: () => { say("hate", "我不吃雞排...你果然還是不夠了解我。"); setTimeout(()=>showEnding("sad","【結局：不夠了解她的飲食】", "forgot_food"), 2000); }},
                             {t: "2. 薯條", f: () => { successEnding("沒錯！我最喜歡薯條了...你竟然一直都記得。"); }},
-                            {t: "3. 都給你", f: () => { say("sad", "雖然你很大方，但我吃素耶...肉的味道我真的不行。"); setTimeout(()=>showEnding("sad","【結局：被遺忘的素食習慣】", "forgot_food"), 2000); }}
+                            {t: "3. 都給你", f: () => { say("hmm", "雖然你很大方，但我吃素耶...肉的味道我真的不行。"); setTimeout(()=>showEnding("sad","【結局：被遺忘的素食習慣】", "forgot_food"), 2000); }}
                         ]
                     },
                     {
@@ -636,7 +640,7 @@ else if(q.includes("身高")) {
                     {
                         q: "我傳說對決哪一隻英雄最強、最厲害呢？",
                         opts: [
-                            {t: "A. 娜塔亞", f: () => { successEnding("沒錯！我的娜塔亞可是噴得超準的喔！"); }},
+                            {t: "A. 娜塔亞", f: () => { successEnding("沒錯！我的娜塔亞可是射得超準的喔！"); }},
                             {t: "B. 芽芽", f: () => { wrongHero(); }},
                             {t: "C. 薇菈", f: () => { wrongHero(); }},
                             {t: "D. 愛麗絲", f: () => { wrongHero(); }}
@@ -651,7 +655,7 @@ else if(q.includes("身高")) {
         } 
         // 4. 好感度不足
         else {
-            showEnding("annoyed", "孟孟：「你是個好人，但我們感覺不太對，就這樣吧，再見。」", "bad_end");
+            showEnding("hmm", "孟孟：「你是個好人，但我們感覺只適合當朋友，抱歉。」", "bad_end");
         }
     }
 
@@ -673,7 +677,7 @@ else if(q.includes("身高")) {
     }
 
     function wrongHero() {
-        say("annoyed", "那隻我根本不常玩吧...看來你玩遊戲時都沒在看我。");
+        say("hmm", "那隻我根本不常玩吧...看來你玩遊戲時都沒在看我。");
         setTimeout(()=>showEnding("sad","【結局：遺憾終場：沒默契的戰友】", "bad_end"), 2000);
     }
 
@@ -776,7 +780,7 @@ function loadGame() {
         document.getElementById('ui').style.display = 'flex';
         document.getElementById('msg-box').style.display = 'block';
         updateUI();
-        say("happy", "歡迎回來！我們繼續吧？");
+        say("happy", "剛剛去哪了！沒事我們繼續吧？");
     }
 }
 
