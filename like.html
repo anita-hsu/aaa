@@ -271,10 +271,16 @@ function say(face, txt) {
     const img = document.getElementById('f-' + face);
     if(img) img.classList.add('active');
 
-    // 2. 打字機邏輯
+    // 2. 打字機邏輯優化
     const textEl = document.getElementById('text');
+    
+    // 【關鍵】強制停止上一次的打字計時器，防止重疊
+    if(typeTimer) {
+        clearInterval(typeTimer);
+        typeTimer = null;
+    }
+    
     textEl.innerText = ""; // 先清空文字
-    if(typeTimer) clearInterval(typeTimer); // 清除上一次還沒跑完的計時器
 
     let i = 0;
     typeTimer = setInterval(() => {
@@ -282,8 +288,11 @@ function say(face, txt) {
         i++;
         if (i >= txt.length) {
             clearInterval(typeTimer);
+            typeTimer = null;
+            // 文字跑完後，對話框進入「等待點擊」狀態
+            textEl.dataset.status = "done"; 
         }
-    }, 50); // 每 50 毫秒跳一個字
+    }, 40); // 調整至 40ms，體感更流暢
 
     document.getElementById('msg-box').style.display = 'block';
     updateUI();
@@ -506,17 +515,19 @@ else if(q.includes("身高")) {
     }
     // --- 遊戲循環與隨機事件 ---
     function autoTick() {
-        if(isDead) return;
-        
-        // 如果體力沒了，點擊時直接觸發 handleAction 的檢查邏輯，而不是直接 return 導致畫面卡住
-        if(hp <= 0) {
-            alert("累到動不了了...");
-            nextDay();
-            return;
-        }
+    if(isDead) return;
 
-        const o = document.getElementById('opts'); 
-        if(o.style.display === 'flex') return; // 選單開著就不重複觸發
+    const textEl = document.getElementById('text');
+    const o = document.getElementById('opts');
+
+    // 如果文字還在跑，點擊可以「瞬間完成文字」（進階優化）
+    if (typeTimer) {
+        // 這部分可以選擇要不要做：點一下立即顯示全部文字
+        return; 
+    }
+
+    // 如果選單已經開著，點擊對話框不重複觸發
+    if(o.style.display === 'flex') return;
 
         o.innerHTML = "";
         const act = ["訊息聊天", "三角洲", "傳說對決", "麻將", "世界計畫", "念書", "晚安睡覺"];
