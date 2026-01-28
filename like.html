@@ -7,11 +7,23 @@
     <style>
         :root { --p: #ff8e91; --p-dark: #ff6b6e; }
         body { margin: 0; background: #1a1a1a; font-family: "Microsoft JhengHei", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; overflow: hidden; touch-action: manipulation; }
-        #game { width: 100%; max-width: 500px; height: 100vh; background: white; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.6); }
+        #game { width: 100%; max-width: 500px; height: 100vh; background: white; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.9); }
         @media (min-width: 800px) { #game { max-width: 1024px; height: 768px; border-radius: 15px; } }
         
         /* 設定頁面樣式 */
-        .setup-screen { position: absolute; inset: 0; background: #fff; z-index: 1000; display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding: 30px; box-sizing: border-box; }
+.setup-screen { 
+    position: absolute; 
+    inset: 0; 
+    background: #fff; 
+    z-index: 1000; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    overflow-y: auto; 
+    padding: 20px; /* 手機版間距縮小一點點 */
+    box-sizing: border-box; 
+    -webkit-overflow-scrolling: touch; /* 讓手機滾動更滑順 */
+}
         .setup-screen h2 { color: var(--p); border-left: 5px solid var(--p); padding-left: 15px; width: 100%; text-align: left; margin-bottom: 20px; }
         .select-group { width: 100%; text-align: left; margin-bottom: 15px; }
         .select-group label { display: block; font-weight: bold; font-size: 0.95rem; margin-bottom: 6px; }
@@ -106,7 +118,7 @@
     <div class="stat" style="cursor:pointer; background:var(--p); color:white; pointer-events:auto;" onclick="toggleAchPage()">🏆 成就</div>
     </div>
 
-    <div id="ach-page" style="display:none; position:absolute; inset:0; background:rgba(255,255,255,0.98); z-index:400; padding:20px; flex-direction:column; align-items:center; overflow-y:auto;">
+    <div id="ach-page" style="display:none; position:absolute; inset:0; background:rgba(255,255,255,0.8); z-index:400; padding:20px; flex-direction:column; align-items:center; overflow-y:auto;">
     <h2 style="color:var(--p);">🌟 結局收集圖鑑</h2>
     <p>總收集率：<span id="ach-rate">0%</span></p>
     <div id="ach-list" style="width:100%; display:flex; flex-direction:column; gap:10px;">
@@ -394,7 +406,7 @@ setTimeout(() => {
         box.style.pointerEvents = "none";
 
         if (win) {
-            const winMsgs = ["MVP 是我喔，強吧！", "我就說我娜塔亞最強，一技能0冷卻", "這場帶飛，快誇我 (◍•ᴗ•◍)", "對面被我蹲到懷疑人生哈哈。"];
+            const winMsgs = ["MVP 是我喔，強吧！", "我就說我娜塔亞最強，一技能0冷卻", "這場我帶飛(◍•ᴗ•◍)", "對面被我蹲到懷疑人生哈哈", "我是頂級輔助耶", "神操作，漂亮"];
             say("happy", winMsgs[Math.floor(Math.random() * winMsgs.length)]);
         } else {
             const loseMsgs = ["可惡，對面輔助超會蹲。", "一直被對面打野針對，氣死我了！", "隊友在幹嘛啦...", "嗚嗚輸了，這場手感不太好。"];
@@ -412,7 +424,7 @@ setTimeout(() => {
     }
     function playTable() {
         hp -= 5; let win = Math.random() > 0.5; love += win ? 5 : 0;
-        const res = [{f:"happy",t:"哈哈你放槍！"}, {f:"happy",t:"好耶，胡了！"}, {f:"hate",t:"運氣真差，手氣好臭。"}];
+        const res = [{f:"happy",t:"哈哈你放槍！"}, {f:"happy",t:"好耶，胡了！"}, {f:"hate",t:"運氣真差。"}, {f:"happy",t:"好耶，自摸！"},];
         let r = res[Math.floor(Math.random()*res.length)];
         say(r.f, r.t);
     }
@@ -451,7 +463,7 @@ setTimeout(() => {
             else if(q.includes("身") || q.includes("體重") || q.includes("生日")) say("annoyed", "那是隱私吧？");
             else if(q.includes("類型")) say("hate", "不關你的事吧。");
             else if(q.includes("晚餐")) say("normal", "隨便吃吃。");
-            else if(q.includes("吃素")) say("normal", "因為肉的油會讓我想吐。");
+            else if(q.includes("吃素")) say("normal", "因為肉會讓我想吐。");
             else if(q.includes("吃") || q.includes("喝")) say("normal", "幹嘛？你要請我喔？");
             else if(q.includes("興趣")) say("normal", "唱歌、出去玩。");
             else if(q.includes("學校")) say("annoyed", "就那樣，沒什麼好說的。");
@@ -468,7 +480,7 @@ setTimeout(() => {
             else if(q.includes("腰圍")) say("shy", "61cm，之前明明才50幾的...。");
             else if(q.includes("生日")) say("happy", r(["2/21！記好了喔。", "是小雙魚"]));
             else if(q.includes("晚餐")) say("normal", r(["隨便吃點減肥。", "去一中街吃的" , "去旱溪夜市吃的" , "去學校外面吃的"]));
-            else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
+            else if(q.includes("吃素")) say("normal", "就說了肉的油味和口感我真的不行嘛。");
             else if(q.includes("類型")) say("think", "高高的、聰明的、可以的話要溫柔體貼一點。");
             else if(q.includes("吃")) say("excited", "滷味、炸的，這些最讚了。");
             else if(q.includes("喝")) say("happy", "我不挑，你買的都好。");
@@ -508,7 +520,7 @@ else if(q.includes("身高")) {
 }            else if(q.includes("體重")) say("hmm", "44kg！敢嫌我重你就死定了。");
             else if(q.includes("腰圍")) say("sad", "61cm，之前明明才50幾的...嗚。");
             else if(q.includes("生日")) say("shy", r(["2/21！記好了喔，你忘記我會難過的。", "2/21 沒有你的祝福我會傷心的"]));
-            else if(q.includes("吃素")) say("normal", "就說了肉的油味我真的不行嘛。");
+            else if(q.includes("吃素")) say("normal", "就說了肉的味道我真的不行嘛。");
             else if(q.includes("類型")) say("like", "現在的話，喜歡個性像你一樣的。");
             else if(q.includes("愛吃的")) say("excited", "最喜歡薯條跟杏鮑菇了！");
             else if(q.includes("飲料")) say("wink", "想喝酒～手搖也喜歡，但想跟你一起喝。");
@@ -595,7 +607,7 @@ else if(q.includes("身高")) {
     if (lookScore > 8) finalLove *= 1.1;
 
     // 1. 隱藏結局：極致舔狗 (好感超高但自己太廢)
-    if (finalLove > 90 && study < 5 && skill < 5) {
+    if (finalLove > 90 && study < 5 && skill < 10) {
         showEnding("annoyed", "孟孟：「雖然你對我很好，但我覺得你對自己的人生太不負責任了。再見。」", "simper");
     }
     // 2. 隱藏結局：孤傲求敗 (完全不聊天)
@@ -603,7 +615,7 @@ else if(q.includes("身高")) {
         showEnding("hate", "這10天你只在乎你自己，再見。", "hermit");
     }
     // 3. 隱藏結局：課金戰士 (送禮次數多)
-    else if (giftCount >= 5) {
+    else if (giftCount >= 4) {
         showEnding("wink", "孟孟：「雖然你一直送我東西我很開心，但我不想一直被餵胖」", "rich_guy");
     }
     // 4. 數值結局：頂大學霸
@@ -615,7 +627,7 @@ else if(q.includes("身高")) {
         showEnding("play", "孟孟：「看你在職業賽場上拿冠軍，我真的替你高興！」", "pro_gamer");
     }
     // 6. 正常真愛考驗
-        else if (finalLove > 70 && study >= 14 && skill >= 13) {
+        else if (finalLove > 75 && study >= 14 && skill >= 13) {
             say("hold", "這10天真的很快呢...在結束之前，我想問你一個問題，看看你有多了解我。");
             
             setTimeout(() => {
@@ -789,4 +801,3 @@ window.onload = loadGame;
 </script>
 </body>
 </html>
-
