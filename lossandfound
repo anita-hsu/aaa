@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校園失物招領平台 - 原型系統</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --border-color: #ccc;
+            --bg-light: #f9f9f9;
+        }
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+        /* 側邊欄導覽 */
+        .sidebar {
+            width: 220px;
+            background-color: #ffffff;
+            border-right: 2px solid var(--border-color);
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-sizing: border-box;
+        }
+        .sidebar h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-menu li {
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .sidebar-menu li:hover {
+            background-color: #e6f7ff;
+            color: var(--primary-color);
+        }
+        .sidebar-menu li.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* 修正後的「尋找進度」輸入區塊 */
+        .search-progress-box {
+            margin-top: auto;
+            padding: 12px;
+            border: 2px solid #333;
+            background: #fffdf0;
+            border-radius: 6px;
+        }
+        .search-progress-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            text-align: center;
+        }
+        .search-input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        .search-input-group input {
+            flex: 1;
+            padding: 4px;
+            border: 1px solid #333;
+            font-size: 13px;
+        }
+        .search-input-group button {
+            padding: 4px 8px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .status-result {
+            font-size: 13px;
+            padding: 6px;
+            border: 1px dashed #e6a23c;
+            background: #fff;
+            display: none; /* 預設隱藏 */
+        }
+
+        /* 主要內容區 */
+        .main-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .page {
+            display: none;
+            background: white;
+            padding: 25px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .page.active {
+            display: block;
+        }
+
+        /* 通用元件樣式 */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 6px 15px;
+            border: 2px solid #333;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .btn:hover {
+            background: #eee;
+        }
+        .grid-types {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .type-box {
+            border: 2px solid #333;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            background: white;
+        }
+        .type-box.selected {
+            background: #ddd;
+        }
+        
+        /* 表單與表格樣式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: inline-block;
+            width: 100px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"], .form-group input[type="email"] {
+            width: 200px;
+            padding: 5px;
+            border: 1px solid #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table, th, td {
+            border: 2px solid #333;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* 比對結果卡片 */
+        .match-flex {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .match-card {
+            border: 2px solid #333;
+            padding: 10px;
+            flex: 1;
+            text-align: center;
+            background: #fff;
+        }
+        .img-placeholder {
+            width: 100%;
+            height: 100px;
+            border: 1px dashed #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            background: #fafafa;
+        }
+
+        /* 快速切換測試面板 */
+        .test-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            gap: 5px;
+            z-index: 999;
+        }
+        .test-panel button {
+            background: #fff;
+            border: none;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>Menu ☰</h3>
+        <p style="margin:0; font-size:14px; color:#666;">身份：</p>
+        <ul class="sidebar-menu">
+            <li onclick="switchPage('page1')">👤 註冊/登入</li>
+            <li onclick="switchPage('page2')">🔍 失主找物 (條件輸入)</li>
+            <li onclick="switchPage('page3')">📊 失物比對結果</li>
+            <li onclick="switchPage('page4')">📥 拾獲者上傳登記</li>
+            <li onclick="switchPage('page5')">💼 管理者後台</li>
+        </ul>
+        
+        <div class="search-progress-box">
+            <h4>🔍 尋找進度</h4>
+            <div class="search-input-group">
+                <input type="text" id="query-code" placeholder="輸入編號 (例:29163)">
+                <button onclick="checkItemStatus()">查詢</button>
+            </div>
+            <div id="status-result-display" class="status-result">
+                </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        <div id="page1" class="page active">
+            <div class="header-bar">
+                <h2>校園失物招領平台</h2>
+                <button class="btn">登入 / 註冊</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div class="form-group">
+                        <label>真實姓名：</label>
+                        <input type="text" value="小明">
+                    </div>
+                    <div class="form-group">
+                        <label>電話號碼：</label>
+                        <input type="text" placeholder="請輸入電話">
+                    </div>
+                    <div class="form-group">
+                        <label>電子郵件：</label>
+                        <input type="email" placeholder="請輸入 Email">
+                    </div>
+                    <div class="form-group">
+                        <label>學號：</label>
+                        <input type="text" placeholder="請輸入學號">
+                    </div>
+                    <button class="btn" onclick="switchPage('page2')">下一步</button>
+                </div>
+                
+                <div style="font-size: 30px; padding: 0 20px;">⇒</div>
+                
+                <div style="flex: 1; border: 2px dashed #333; padding: 20px; text-align: center;">
+                    <p><strong>我們已寄發驗證碼<br>至您的信箱</strong></p>
+                    <input type="text" style="width: 120px; text-align: center; padding: 5px; margin: 10px 0;" placeholder="輸入驗證碼"><br>
+                    <button class="btn">確定</button>
+                </div>
+
+                <div style="font-size: 30px; padding: 0 20px;">⇒</div>
+
+                <div style="flex: 0.5; font-size: 24px; font-weight: bold; color: green; text-align: center; align-self: center;">
+                    註冊<br>完成
+                </div>
+            </div>
+        </div>
+
+        <div id="page2" class="page">
+            <div class="header-bar">
+                <h2>遺失物類別與特徵篩選</h2>
+                <span>歡迎，小明</span>
+            </div>
+            <div style="display: flex; gap: 30px;">
+                <div style="flex: 1;">
+                    <h3>遺失物類型：</h3>
+                    <div class="grid-types">
+                        <div class="type-box">錢</div>
+                        <div class="type-box">電子產品</div>
+                        <div class="type-box selected">文具用品</div>
+                        <div class="type-box">證件</div>
+                        <div class="type-box">書本</div>
+                        <div class="type-box">飾品</div>
+                        <div class="type-box">玩具</div>
+                        <div class="type-box">包包</div>
+                        <div class="type-box">其它</div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label><strong>是否有遺失物的圖片：</strong></label><br><br>
+                        <input type="radio" name="has_img" id="img_yes" checked> <label for="img_yes">是</label> &nbsp;&nbsp;
+                        <input type="radio" name="has_img" id="img_no"> <label for="img_no">否</label>
+                    </div>
+                    <br>
+                    <button class="btn" onclick="switchPage('page3')">下一步</button>
+                </div>
+
+                <div style="flex: 1; border-left: 2px solid var(--border-color); padding-left: 20px;">
+                    <div id="if-has-img">
+                        <h3>if 是：</h3>
+                        <p>上傳圖片 (.jpeg, .png)</p>
+                        <div class="img-placeholder" style="height: 120px;">
+                            ⭐<br>[ 點擊上傳 / 預覽圖片 ]
+                        </div>
+                    </div>
+                    <hr>
+                    <div id="if-no-img">
+                        <h3>if 否 (特徵篩選)：</h3>
+                        <p>
+                            <strong>顏色：</strong> 
+                            <input type="checkbox" checked> 紅 <input type="checkbox"> 黃 <input type="checkbox"> 綠 <input type="checkbox"> 藍 <input type="checkbox" checked> 黑 <input type="checkbox" checked> 白
+                        </p>
+                        <p>
+                            <strong>形狀：</strong> 
+                            <input type="checkbox"> 人形 <input type="checkbox"> 動物形 <input type="checkbox"> 方 <input type="checkbox"> 圓 <br>
+                            <input type="checkbox"> 長 <input type="checkbox"> 短 <input type="checkbox" checked> 不規則
+                        </p>
+                        <p>
+                            <strong>遺失時間：</strong><br>
+                            <input type="date"> ~ <input type="date">
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page3" class="page">
+            <div class="header-bar">
+                <h2>系統智能比對結果</h2>
+                <button class="btn" onclick="switchPage('page2')">回首頁</button>
+            </div>
+
+            <div style="border: 1px solid #333; padding: 15px; margin-bottom: 20px; background: #fffdf0;">
+                <h3>【if 是】系統依據遺失物圖片、地點、時間與標籤自動比對：</h3>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="border: 2px solid #333; padding: 10px; width: 150px; text-align: center;">
+                        <div class="img-placeholder">⭐</div>
+                        <small>自動編號: 90127</small>
+                        <p><strong>您的遺失物</strong></p>
+                    </div>
+                    <div style="font-size: 24px;">➔</div>
+                    <div style="flex: 1;">
+                        <p><strong>包含：</strong>遺失物所在地、拾獲地點、物品標籤、拾獲時間</p>
+                        <p style="color: red; font-weight: bold;">前三個相符結果：(點擊圖片確認)</p>
+                        <div class="match-flex">
+                            <div class="match-card" onclick="showPopup('found')">
+                                <div class="img-placeholder">⭐</div>
+                                <small>No. 29163</small>
+                                <p style="color: green; font-weight: bold;">相似度 98%</p>
+                                <a href="#">詳細資料</a>
+                            </div>
+                            <div class="match-card" onclick="showPopup('not-found')">
+                                <div class="img-placeholder">📐</div>
+                                <small>No. 12311</small>
+                                <p>相似度 80%</p>
+                                <a href="#">詳細資料</a>
+                            </div>
+                            <div class="match-card" onclick="showPopup('not-found')">
+                                <div class="img-placeholder">✏️</div>
+                                <small>No. 16192</small>
+                                <p>相似度 50%</p>
+                                <a href="#">詳細資料</a>
+                            </div>
+                            <div style="align-self: center;">
+                                <button class="btn" onclick="showPopup('none')">都不是</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #333; padding: 15px; background: #f0f8ff;">
+                <h3>【if 否】完全相符結果共 2 筆：</h3>
+                <div style="display: flex; gap: 20px;">
+                    <div style="width: 200px;">
+                        <p><strong>您選擇的標籤：</strong></p>
+                        <ul>
+                            <li>黑</li>
+                            <li>白</li>
+                            <li>不規則</li>
+                            <li>文具用品</li>
+                        </ul>
+                    </div>
+                    <div style="flex: 1;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>編號</th>
+                                    <th>拾獲地點</th>
+                                    <th>拾獲時間</th>
+                                    <th>備註</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="cursor: pointer;" onclick="showPopup('found')">
+                                    <td>29163</td>
+                                    <td>國秀樓 310</td>
+                                    <td>115/04/29</td>
+                                    <td>星形</td>
+                                </tr>
+                                <tr>
+                                    <td>48251</td>
+                                    <td>管理館 513</td>
+                                    <td>114/12/31</td>
+                                    <td>有香蕉圖案</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="text-align: right; margin-top: 10px;">
+                            <button class="btn" onclick="showPopup('none')">都不是</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status-popup" style="margin-top: 20px; padding: 15px; border: 3px double red; display: none; background: #fff;">
+                <div id="pop-content-found" class="pop-msg" style="display: none;">
+                    <h3>🎉 if 找到了：</h3>
+                    <p style="font-size: 18px; color: green;"><strong>已通知管理員，請在 115/06/30 前，至校安中心領取您的遺失物。</strong></p>
+                </div>
+                <div id="pop-content-none" class="pop-msg" style="display: none;">
+                    <h3>❓ if 點擊都不是：</h3>
+                    <p style="font-size: 16px;"><strong>我們已將您的物品存在資料庫，有相符資料會寄 email 通知。</strong></p>
+                </div>
+                <div style="text-align: center;"><button class="btn" onclick="document.getElementById('status-popup').style.display='none'">關閉提示</button></div>
+            </div>
+        </div>
+
+        <div id="page4" class="page">
+            <div class="header-bar">
+                <h2>拾獲物登記上傳介面</h2>
+                <span>歡迎，大明 (拾獲者)</span>
+            </div>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <h3>遺失物類型：</h3>
+                    <div class="grid-types">
+                        <div class="type-box">錢</div>
+                        <div class="type-box">電子產品</div>
+                        <div class="type-box selected">文具用品</div>
+                        <div class="type-box">證件</div>
+                        <div class="type-box">書本</div>
+                        <div class="type-box">飾品</div>
+                        <div class="type-box">玩具</div>
+                        <div class="type-box">包包</div>
+                        <div class="type-box">其它</div>
+                    </div>
+                    <p><strong>拾獲時間：</strong> 115/04/29</p>
+                    <p><strong>拾獲地點：</strong> <input type="text" value="國秀樓 310" style="padding: 4px;"></p>
+                    <p><strong>其它備註：</strong> <input type="text" value="星形" style="padding: 4px;"></p>
+                </div>
+                <div style="flex: 1; border-left: 2px solid var(--border-color); padding-left: 20px;">
+                    <h3>上傳圖片：(不同角度，共三張)</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="img-placeholder" style="height: 80px;">⭐ (角度1正面)</div>
+                        <div class="img-placeholder" style="height: 80px;">⭐ (角度2側面)</div>
+                        <div class="img-placeholder" style="height: 80px;">⭐ (角度3背面)</div>
+                    </div>
+                    <p style="background: #eee; padding: 8px;"><strong>物品標籤 (Auto AI 自動辨識)：</strong> <br>⬛ 黑、⬜ 白、🌀 不規則</p>
+                    <br><br>
+                    <div style="text-align: right;">
+                        <button class="btn" style="background-color: #4CAF50; color: white;" onclick="alert('拾獲物登記成功！編號生成為：29163')">送出登記</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page5" class="page">
+            <div class="header-bar">
+                <h2>管理介面 (校安中心後台)</h2>
+                <div>
+                    <strong>遺失物編號：</strong>29163 
+                    <button class="btn" style="font-size:12px; padding:2px 5px;" onclick="alert('前往詳細資料頁面')">詳細資料</button>
+                </div>
+            </div>
+            
+            <div style="background: #fffbe6; padding: 10px; border: 1px solid #e6a23c; margin-bottom: 15px;">
+                <strong>最新通知回覆：</strong><br>
+                「我們已收到您的回覆，115/06/30 前若無人領取，可在三日內至校安中心領取，逾時銷毀。」
+                <div style="margin-top:5px;">
+                    <strong>尋找進度/狀態切換：</strong> 
+                    <span style="text-decoration: underline; color: blue; cursor: pointer;">尋找物品中</span> / 
+                    <span style="font-weight: bold; color: red;">尋找失主中</span> / 
+                    <span style="text-decoration: underline; color: blue; cursor: pointer;">已歸還</span> / 
+                    <span style="text-decoration: underline; color: blue; cursor: pointer;">已銷毀</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 20px;">
+                <div style="width: 220px; border-right: 1px solid var(--border-color); padding-right: 15px;">
+                    <h4>所有遺失物列表</h4>
+                    <ul style="list-style: none; padding-left: 10px; line-height: 2;">
+                        <li>💰 錢 (13)</li>
+                        <li>📱 電子產品 (16)</li>
+                        <li style="font-weight: bold; background: #e6f7ff;">✏️ 文具用品 (24)</li>
+                        <li>🪪 證件 (47)</li>
+                        <li>📚 書本 (45)</li>
+                        <li>💍 飾品 (8)</li>
+                        <li>🧸 玩具 (2)</li>
+                        <li>🎒 包包 (14)</li>
+                        <li>📦 其它 (20)</li>
+                    </ul>
+                </div>
+
+                <div style="flex: 1;">
+                    <h4>資料明細：</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>編號</th>
+                                <th>拾獲地點</th>
+                                <th>拾獲時間</th>
+                                <th>其它備註</th>
+                                <th>圖片</th>
+                                <th>物品狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="background-color: #f1f9ff;">
+                                <td>29163</td>
+                                <td>國秀樓 310</td>
+                                <td>115/04/29</td>
+                                <td>星形</td>
+                                <td><small>29163.png</small></td>
+                                <td style="color: orange; font-weight: bold;">尋找物品中</td>
+                            </tr>
+                            <tr>
+                                <td>18275</td>
+                                <td>操場</td>
+                                <td>115/03/21</td>
+                                <td>自動筆</td>
+                                <td><small>18275.jpeg</small></td>
+                                <td style="color: red; font-weight: bold;">尋找失主中</td>
+                            </tr>
+                            <tr style="color: #999; background: #fafafa;">
+                                <td>60114</td>
+                                <td>工程館 104</td>
+                                <td>112/01/04</td>
+                                <td>螢光筆</td>
+                                <td><small>60114.png</small></td>
+                                <td>已銷毀</td>
+                            </tr>
+                            <tr style="color: #999; background: #fafafa;">
+                                <td>71323</td>
+                                <td>明秀西路</td>
+                                <td>111/05/11</td>
+                                <td>立可帶</td>
+                                <td><small>71323.png</small></td>
+                                <td style="color: green;">已歸還</td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" style="color: #888; font-style: italic;">～ 以下省略 ～</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="test-panel">
+        <span style="font-size:11px;">原型切換：</span>
+        <button onclick="switchPage('page1')">圖1</button>
+        <button onclick="switchPage('page2')">圖2</button>
+        <button onclick="switchPage('page3')">圖3/4</button>
+        <button onclick="switchPage('page4')">圖4中</button>
+        <button onclick="switchPage('page5')">圖5</button>
+    </div>
+
+    <script>
+        // 模擬的後端資料庫
+        const mockDatabase = {
+            "29163": { name: "星型文具", status: "尋找物品中 / 尋找失主中", color: "orange" },
+            "18275": { name: "自動筆", status: "尋找失主中", color: "red" },
+            "60114": { name: "螢光筆", status: "已銷毀", color: "#999" },
+            "71323": { name: "立可帶", status: "已歸還", color: "green" }
+        };
+
+        // 修正後的「尋找進度」查詢邏輯
+        function checkItemStatus() {
+            const codeInput = document.getElementById('query-code').value.trim();
+            const resultDiv = document.getElementById('status-result-display');
+            
+            if(!codeInput) {
+                alert('請輸入物品編號！');
+                return;
+            }
+
+            resultDiv.style.display = 'block'; // 顯示區塊
+
+            if(mockDatabase[codeInput]) {
+                const item = mockDatabase[codeInput];
+                resultDiv.innerHTML = `
+                    <strong style="color: #333;">編號：${codeInput}</strong><br>
+                    <span style="font-size:12px; color:#666;">項目：${item.name}</span><br>
+                    <span style="font-weight:bold; color:${item.color};">狀態：${item.status}</span>
+                `;
+            } else {
+                resultDiv.innerHTML = `<span style="color:red; font-weight:bold;">⚠️ 查無此編號</span>`;
+            }
+        }
+
+        // 頁面切換邏輯
+        function switchPage(pageId) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            const menuItems = document.querySelectorAll('.sidebar-menu li');
+            menuItems.forEach((item, index) => {
+                item.classList.remove('active');
+                if(`page${index+1}` === pageId) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // 彈出提示邏輯
+        function showPopup(type) {
+            const popup = document.getElementById('status-popup');
+            const msgs = document.querySelectorAll('.pop-msg');
+            
+            popup.style.display = 'block';
+            msgs.forEach(msg => msg.style.display = 'none');
+            
+            if (type === 'found') {
+                document.getElementById('pop-content-found').style.display = 'block';
+            } else if (type === 'none') {
+                document.getElementById('pop-content-none').style.display = 'block';
+            } else {
+                alert('開啟該項目的詳細資料比對頁面');
+                popup.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
