@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生日快樂</title>
+    <title>卡片 ✨</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&display=swap" rel="stylesheet">
+
     <style>
         * {
             box-sizing: border-box;
@@ -15,28 +20,81 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f5abab;
+            background-color: #1f1d24; 
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Klee One', 'Microsoft JhengHei', sans-serif;
         }
 
-        /* 核心按鈕 */
+        /* 故事卡片主體 */
+        .card {
+            background: #fffdf9; /* 復古米白色紙張感 */
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            width: 85%;
+            max-width: 450px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            z-index: 5;
+            border: 1px solid #eadecc;
+        }
+
+        /* 打字機文字外框 */
+        .typewriter-container {
+            font-size: 1.4rem;
+            color: #4a4a4a;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            min-height: 60px; /* 預留空間防止卡片高度抖動 */
+            display: inline-block;
+        }
+
+        /* 打字機光標效果 */
+        .typewriter-text {
+            border-right: 2px solid #ff6b6b;
+            white-space: pre-wrap; /* 支援換行 */
+            animation: blink 0.75s step-end infinite;
+        }
+
+        /* 光標閃爍動畫 */
+        @keyframes blink {
+            from, to { border-color: transparent }
+            50% { border-color: #ff6b6b; }
+        }
+
+        /* 核心按鈕（預設隱藏） */
         .launch-btn {
-            padding: 15px 40px;
-            font-size: 1.3rem;
+            padding: 12px 35px;
+            font-size: 1.2rem;
             font-weight: bold;
-            color: white;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); /* 換成粉嫩系漸層 */
-            color: #4a4a4a; /* 深灰文字，搭配粉色按鈕 */
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%);
+            color: #4a4a4a;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(254, 207, 239, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
-            z-index: 10;
+            box-shadow: 0 6px 15px rgba(254, 207, 239, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.6s ease;
             font-family: inherit;
             letter-spacing: 2px;
+            
+            /* 初始狀態：隱藏且往下移一點點 */
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none; /* 未出現前無法點擊 */
         }
+
+        /* 按鈕顯現時的 CSS Class */
+        .launch-btn.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
         .launch-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 8px 25px rgba(254, 207, 239, 0.6);
@@ -45,41 +103,33 @@
             transform: scale(0.95);
         }
 
-        /* 噴發照片與文字的共同樣式 */
+        /* 噴發物件樣式 */
         .burst-item {
             position: absolute;
             pointer-events: none;
             opacity: 0;
             transform: translate(-50%, -50%) scale(0);
             animation: explode 1.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            z-index: 10; /* 讓噴出來的東西飛在卡片前面 */
         }
 
-        /* 照片獨有樣式（手帳拍立得風） */
         img.burst-item {
-            width: 130px;
-            height: 130px;
+            width: 120px;
+            height: 120px;
             object-fit: cover;
-            border: 6px solid #fff; /* 加厚白邊像拍立得 */
+            border: 6px solid #fff;
             border-radius: 4px;
-            box-shadow: 2px 4px 15px rgba(0,0,0,0.25);
+            box-shadow: 2px 4px 15px rgba(0,0,0,0.3);
         }
 
-        /* 手寫文字獨有樣式 */
         span.burst-item {
             font-family: 'Klee One', sans-serif;
-            font-size: 2.3rem;       /* 放大手寫字才夠看 */
+            font-size: 2.2rem;
             font-weight: 600;
             white-space: nowrap;
-            /* 輕微的白色發光與陰影，襯托粉嫩手寫字 */
-            text-shadow: 
-                2px 2px 0px #fff,
-                -1px -1px 0px #fff,  
-                1px -1px 0px #fff,
-                -1px 1px 0px #fff;
+            text-shadow: 2px 2px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;
         }
 
-
-        /* 噴發動畫 */
         @keyframes explode {
             0% {
                 top: var(--start-y);
@@ -87,13 +137,11 @@
                 transform: translate(-50%, -50%) scale(0) rotate(0deg);
                 opacity: 1;
             }
-            50% {
-                opacity: 1;
-            }
+            50% { opacity: 1; }
             100% {
                 top: calc(var(--start-y) + var(--move-y));
                 left: calc(var(--start-x) + var(--move-x));
-                transform: translate(-50%, -50%) scale(1.2) rotate(var(--rotate));
+                transform: translate(-50%, -50%) scale(1.1) rotate(var(--rotate));
                 opacity: 0;
             }
         }
@@ -101,12 +149,44 @@
 </head>
 <body>
 
-    <button class="launch-btn" onclick="burstEverything(event)">生日按鈕鈕鈕鈕✨</button>
+    <div class="card">
+        <div class="typewriter-container">
+            <span class="typewriter-text" id="typewriter"></span>
+        </div>
+        <button class="launch-btn" id="launchBtn" onclick="burstEverything(event)">祝福你✨</button>
+    </div>
 
     <script>
-        // 照片庫
+        // 1. 設定你想打字呈現的文字 (使用 \n 可以換行)
+        const storyText = "To: 謝翔予\n不知不覺認識快兩年了\n我覺得你是一個稱職的學姊\n我和鯉魚有疑問你都會回答\n有好吃的也會分我們吃\n每一次跟你打遊戲都很開心\n以後有空還要一起玩!";
+        
+        // 打字機速度 (毫秒/字)
+        const typingSpeed = 120; 
+        
+        let charIndex = 0;
+        const typewriterElement = document.getElementById('typewriter');
+        const launchBtn = document.getElementById('launchBtn');
+
+        // 打字機主邏輯
+        function typeWriter() {
+            if (charIndex < storyText.length) {
+                typewriterElement.textContent += storyText.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWriter, typingSpeed);
+            } else {
+                // 字打完了！移除打字機的閃爍光標，並讓按鈕優雅登場
+                typewriterElement.style.borderRight = "none";
+                setTimeout(() => {
+                    launchBtn.classList.add('show');
+                }, 400); // 稍微頓一下下再出按鈕，更有質感
+            }
+        }
+
+        // 網頁載入後自動開始打字
+        window.onload = typeWriter;
+
+        // --- 以下為原本的噴發邏輯 ---
         const photoPool = [
-            
             'B1.jpg',
             'B2.jpg',
             'B3.jpg',
@@ -114,22 +194,18 @@
             'B5.jpg',
             'B6.jpg',
             'B7.jpg'
-        
         ];
-        
 
-        // 這裡輸入你想噴出來的文字內容 💬
         const textPool = ['生日快樂！', 'Happy Birthday!', '天天開心🎉', '實習順利💻', '暴富', '獲得更多樂高', '獲得更多豬豬', '跟雞排99'];
+        const colorPool = ['#ff6b6b', '#ff8787', '#4dadf7', '#06d6a0', '#ffd166', '#b5179e'];
 
         function burstEverything(event) {
             const startX = event.clientX + 'px';
             const startY = event.clientY + 'px';
             
-            // 設定照片與文字的數量
-            const photoCount = 10; 
-            const textCount = 8;
+            const photoCount = 8; 
+            const textCount = 10; 
 
-            // 1. 噴照片
             for (let i = 0; i < photoCount; i++) {
                 const randomUrl = photoPool[Math.floor(Math.random() * photoPool.length)];
                 const img = document.createElement('img');
@@ -139,31 +215,35 @@
                 document.body.appendChild(img);
             }
 
-            // 2. 噴文字
             for (let i = 0; i < textCount; i++) {
                 const randomText = textPool[Math.floor(Math.random() * textPool.length)];
+                const randomColor = colorPool[Math.floor(Math.random() * colorPool.length)];
+                
                 const span = document.createElement('span');
                 span.innerText = randomText;
+                span.style.color = randomColor;
                 span.classList.add('burst-item');
-                applyRandomTrajectory(span, startX, startY);
+                
+                applyRandomTrajectory(span, startX, startY, true);
                 document.body.appendChild(span);
             }
         }
 
-        // 計算隨機飛散軌跡的函式
-        function applyRandomTrajectory(element, startX, startY) {
+        function applyRandomTrajectory(element, startX, startY, isText = false) {
             const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * 250 + 150;
+            const radius = Math.random() * 280 + 150; 
             const moveX = Math.cos(angle) * radius + 'px';
-            const moveY = (Math.sin(angle) * radius + 100) + 'px'; // 帶點重力下墜
-            const rotate = (Math.random() * 60 - 30) + 'deg'; // 文字照片轉點角度就好，別轉太暈
+            const moveY = (Math.sin(angle) * radius + 100) + 'px';
+            
+            const maxRotate = isText ? 80 : 40;
+            const rotate = (Math.random() * maxRotate - (maxRotate/2)) + 'deg';
 
             element.style.setProperty('--start-x', startX);
             element.style.setProperty('--start-y', startY);
             element.style.setProperty('--move-x', moveX);
             element.style.setProperty('--move-y', moveY);
             element.style.setProperty('--rotate', rotate);
-            element.style.animationDelay = (Math.random() * 0.2) + 's';
+            element.style.animationDelay = (Math.random() * 0.15) + 's';
 
             element.addEventListener('animationend', () => {
                 element.remove();
