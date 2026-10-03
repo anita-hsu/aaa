@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 影像辨識智慧垃圾分類系統 - 大學畢業專題展示模擬器</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;600;700;800&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0B0F19;
+      color: #E2E8F0;
+      overflow-x: hidden;
+    }
+
+    .font-mono-tech {
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* Custom Tech Glow Effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+    }
+    .glow-green {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+    .glow-orange {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+    .text-glow {
+      text-shadow: 0 0 8px currentColor;
+    }
+
+    /* Scanline Animation */
+    .scanline {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+      opacity: 0.8;
+      animation: scan 2.5s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { top: 0%; }
+      100% { top: 100%; }
+    }
+
+    /* Radar sweep animation */
+    .radar-sweep {
+      background: conic-gradient(from 0deg at 50% 50%, rgba(6, 182, 212, 0.15) 0deg, transparent 60deg, transparent 360deg);
+      animation: rotate 4s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* 3D Lid Flip Style */
+    .bin-lid {
+      transform-origin: top center;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .bin-container.open .bin-lid {
+      transform: rotateX(-100deg);
+    }
+
+    .bin-container.shake {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+
+    /* Glassmorphism */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+  <!-- Header Bar -->
+  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+      
+      <!-- Project Title -->
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 bg-cyan-950/80 border border-cyan-500/30 rounded-xl text-cyan-400">
+          <i class="fa-solid fa-microchip text-2xl animate-pulse"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="bg-cyan-500/10 text-cyan-400 text-xs px-2 py-0.5 rounded border border-cyan-500/20 font-mono-tech">
+              CAPSTONE PROJECT 2026
+            </span>
+            <span class="text-slate-400 text-xs">made by gemini & Anita</span>
+          </div>
+          <h1 class="text-xl font-bold tracking-wide text-white flex items-center gap-2">
+            AI 智慧垃圾辨識與自動分類系統
+            <span class="text-xs font-normal text-slate-400 hidden sm:inline">(YOLOv8-Nano + Edge AI)</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Live Hardware Telemetry -->
+      <div class="flex items-center space-x-4 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono-tech">
+        <div class="flex items-center space-x-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="text-slate-400">FPS:</span>
+          <span id="fps-counter" class="text-emerald-400 font-bold">60.0</span>
+        </div>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div>
+          <span class="text-slate-400">LATENCY:</span>
+          <span id="latency-counter" class="text-cyan-400 font-bold">11.8ms</span>
+        </div>
+        <div class="h-4 w-px bg-slate-800 hidden md:block"></div>
+        <div class="hidden md:block">
+          <span class="text-slate-400">GPU TEMP:</span>
+          <span class="text-amber-400 font-bold">48°C</span>
+        </div>
+        <div class="h-4 w-px bg-slate-800 hidden lg:block"></div>
+        <div class="hidden lg:flex items-center space-x-2">
+          <button id="btn-defense-mode" class="px-2.5 py-1 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 rounded text-xs transition">
+            <i class="fa-solid fa-graduation-cap mr-1"></i>教授答辯模擬
+          </button>
+          <button id="btn-auto-demo" class="px-2.5 py-1 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-300 rounded text-xs transition">
+            <i class="fa-solid fa-play mr-1"></i>自動展示 Demo
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Grid Content -->
+  <main class="max-w-7xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+    <!-- LEFT COLUMN: Computer Vision HUD & Data Panel (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+      
+      <!-- AI WebCam Vision Screen -->
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800 relative overflow-hidden flex flex-col justify-between min-h-[320px]">
+        
+        <!-- Screen Top Header -->
+        <div class="flex justify-between items-center text-xs font-mono-tech z-10">
+          <div class="flex items-center space-x-2 text-cyan-400">
+            <i class="fa-solid fa-video text-xs animate-pulse"></i>
+            <span>CAM_01: HIGH_RES_INPUT [1080P]</span>
+          </div>
+          <div id="ai-model-status" class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">
+            MODEL: YOLOv8n ACTIVE
+          </div>
+        </div>
+
+        <!-- Vision HUD Canvas Center area -->
+        <div id="vision-hud-container" class="relative my-4 aspect-video w-full bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-center overflow-hidden">
+          
+          <!-- Radar Sweep Background -->
+          <div class="absolute inset-0 radar-sweep rounded-xl"></div>
+          
+          <!-- Scanline overlay -->
+          <div class="scanline"></div>
+
+          <!-- Crosshair Grid overlay -->
+          <div class="absolute inset-0 border border-cyan-500/10 rounded-xl pointer-events-none flex items-center justify-center">
+            <div class="w-full h-px bg-cyan-500/20"></div>
+            <div class="h-full w-px bg-cyan-500/20 absolute"></div>
+            <div class="w-24 h-24 border border-cyan-500/30 rounded-full absolute"></div>
+          </div>
+
+          <!-- Dynamic Bounding Box (Follows Dragged item or default) -->
+          <div id="bounding-box" class="absolute w-36 h-36 border-2 border-cyan-400 bg-cyan-500/10 rounded transition-all duration-75 flex flex-col justify-between p-1 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+            <div class="flex justify-between text-[10px] font-mono-tech bg-cyan-950/90 text-cyan-300 px-1 rounded">
+              <span id="bb-label">TRACKING_NULL</span>
+              <span id="bb-conf">99.2%</span>
+            </div>
+            <!-- Bounding Box Corner Brackets -->
+            <div class="flex justify-between text-cyan-400 text-xs">
+              <span>┌</span><span>┐</span>
+            </div>
+            <div class="flex justify-between text-cyan-400 text-xs">
+              <span>└</span><span>┘</span>
+            </div>
+          </div>
+
+          <!-- Default Camera Text Display -->
+          <div id="camera-placeholder" class="text-center z-10 pointer-events-none transition-opacity duration-300">
+            <i class="fa-solid fa-expand text-3xl text-slate-700 mb-2"></i>
+            <p class="text-xs text-slate-500 font-mono-tech">將下方垃圾拖曳至此或桶區<br>進行即時 AI 光學辨識與分類</p>
+          </div>
+        </div>
+
+        <!-- Camera Bottom Info Bar -->
+        <div class="flex justify-between items-center text-xs text-slate-400 font-mono-tech z-10 border-t border-slate-800/80 pt-2">
+          <span>TARGET_CLASS: <strong id="target-class-display" class="text-cyan-400">STANDBY</strong></span>
+          <span>ROI: <span class="text-slate-300">640x640</span></span>
+        </div>
+      </div>
+
+      <!-- Stats & Model Metrics Card -->
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800 flex flex-col justify-between gap-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i>
+            分類數據與模型效能統計
+          </h3>
+          <span class="text-xs text-slate-500 font-mono-tech">Acc: 98.6%</span>
+        </div>
+
+        <!-- Donut Chart Container -->
+        <div class="grid grid-cols-2 gap-4 items-center">
+          <div class="h-32 relative">
+            <canvas id="category-chart"></canvas>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>一般垃圾
+              </span>
+              <span id="cnt-general" class="font-bold font-mono-tech text-slate-200">0</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>紙類
+              </span>
+              <span id="cnt-paper" class="font-bold font-mono-tech text-blue-400">0</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>塑膠類
+              </span>
+              <span id="cnt-plastic" class="font-bold font-mono-tech text-amber-400">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Interactive Belt & Smart Bins Area (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-6">
+
+      <!-- SECTION 1: Smart Bins Array with Servos & Ultrasonic sensors -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-boxes-packing text-cyan-400"></i>
+            3D 智慧響應垃圾桶模組
+          </h2>
+          <span class="text-xs text-slate-400 font-mono-tech">SERVO_MOTOR_STATUS: READY</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 sm:gap-4">
+          
+          <!-- BIN 1: General Waste -->
+          <div id="bin-general" data-category="general" class="bin-container glass-panel rounded-2xl p-3 border border-slate-700/60 hover:border-slate-500 transition-all duration-300 relative group flex flex-col justify-between min-h-[220px]">
+            
+            <!-- Sensor LED & Ultrasonic HUD -->
+            <div class="flex justify-between items-center text-[10px] font-mono-tech mb-2">
+              <div class="flex items-center space-x-1">
+                <span class="led-light w-2 h-2 rounded-full bg-slate-600 transition-colors duration-200"></span>
+                <span class="text-slate-400">SERVO #1</span>
+              </div>
+              <span class="ultra-dist text-slate-500">25cm</span>
+            </div>
+
+            <!-- Bin Visual Body -->
+            <div class="flex-1 flex flex-col items-center justify-center my-1 relative">
+              <!-- Lid Element -->
+              <div class="bin-lid w-full h-8 bg-slate-700 border border-slate-600 rounded-t-lg shadow-md mb-1 flex items-center justify-center text-xs text-slate-300">
+                <i class="fa-solid fa-angles-up mr-1 text-[10px]"></i> 蓋板
+              </div>
+              <!-- Main Bin Box -->
+              <div class="w-full flex-1 bg-gradient-to-b from-slate-800 to-slate-900 rounded-b-lg border border-slate-700 flex flex-col items-center justify-center p-3 text-center shadow-inner">
+                <i class="fa-solid fa-trash-can text-3xl text-slate-400 mb-1 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-sm text-slate-200">一般垃圾</span>
+                <span class="text-[10px] text-slate-400">General Waste</span>
+              </div>
+            </div>
+
+            <!-- LCD Display Panel -->
+            <div class="lcd-screen bg-slate-950 border border-slate-800 rounded p-1.5 text-center font-mono-tech text-[10px] text-slate-400">
+              <span class="lcd-text">READY (0 kg)</span>
+            </div>
+          </div>
+
+          <!-- BIN 2: Paper Class -->
+          <div id="bin-paper" data-category="paper" class="bin-container glass-panel rounded-2xl p-3 border border-blue-900/60 hover:border-blue-500 transition-all duration-300 relative group flex flex-col justify-between min-h-[220px]">
+            
+            <!-- Sensor LED & Ultrasonic HUD -->
+            <div class="flex justify-between items-center text-[10px] font-mono-tech mb-2">
+              <div class="flex items-center space-x-1">
+                <span class="led-light w-2 h-2 rounded-full bg-slate-600 transition-colors duration-200"></span>
+                <span class="text-blue-400">SERVO #2</span>
+              </div>
+              <span class="ultra-dist text-slate-500">25cm</span>
+            </div>
+
+            <!-- Bin Visual Body -->
+            <div class="flex-1 flex flex-col items-center justify-center my-1 relative">
+              <!-- Lid Element -->
+              <div class="bin-lid w-full h-8 bg-blue-900 border border-blue-700 rounded-t-lg shadow-md mb-1 flex items-center justify-center text-xs text-blue-200">
+                <i class="fa-solid fa-angles-up mr-1 text-[10px]"></i> 蓋板
+              </div>
+              <!-- Main Bin Box -->
+              <div class="w-full flex-1 bg-gradient-to-b from-blue-950 to-slate-900 rounded-b-lg border border-blue-800 flex flex-col items-center justify-center p-3 text-center shadow-inner">
+                <i class="fa-solid fa-newspaper text-3xl text-blue-400 mb-1 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-sm text-blue-200">紙類回收</span>
+                <span class="text-[10px] text-blue-400">Paper Class</span>
+              </div>
+            </div>
+
+            <!-- LCD Display Panel -->
+            <div class="lcd-screen bg-blue-950/80 border border-blue-900 rounded p-1.5 text-center font-mono-tech text-[10px] text-blue-300">
+              <span class="lcd-text">READY (0 kg)</span>
+            </div>
+          </div>
+
+          <!-- BIN 3: Plastic Class -->
+          <div id="bin-plastic" data-category="plastic" class="bin-container glass-panel rounded-2xl p-3 border border-amber-900/60 hover:border-amber-500 transition-all duration-300 relative group flex flex-col justify-between min-h-[220px]">
+            
+            <!-- Sensor LED & Ultrasonic HUD -->
+            <div class="flex justify-between items-center text-[10px] font-mono-tech mb-2">
+              <div class="flex items-center space-x-1">
+                <span class="led-light w-2 h-2 rounded-full bg-slate-600 transition-colors duration-200"></span>
+                <span class="text-amber-400">SERVO #3</span>
+              </div>
+              <span class="ultra-dist text-slate-500">25cm</span>
+            </div>
+
+            <!-- Bin Visual Body -->
+            <div class="flex-1 flex flex-col items-center justify-center my-1 relative">
+              <!-- Lid Element -->
+              <div class="bin-lid w-full h-8 bg-amber-900 border border-amber-700 rounded-t-lg shadow-md mb-1 flex items-center justify-center text-xs text-amber-200">
+                <i class="fa-solid fa-angles-up mr-1 text-[10px]"></i> 蓋板
+              </div>
+              <!-- Main Bin Box -->
+              <div class="w-full flex-1 bg-gradient-to-b from-amber-950 to-slate-900 rounded-b-lg border border-amber-800 flex flex-col items-center justify-center p-3 text-center shadow-inner">
+                <i class="fa-solid fa-bottle-water text-3xl text-amber-400 mb-1 group-hover:scale-110 transition-transform"></i>
+                <span class="font-bold text-sm text-amber-200">塑膠類</span>
+                <span class="text-[10px] text-amber-400">Plastics & PET</span>
+              </div>
+            </div>
+
+            <!-- LCD Display Panel -->
+            <div class="lcd-screen bg-amber-950/80 border border-amber-900 rounded p-1.5 text-center font-mono-tech text-[10px] text-amber-300">
+              <span class="lcd-text">READY (0 kg)</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 2: Waste Items Selection Grid & Belt -->
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800 flex-1 flex flex-col justify-between">
+        
+        <!-- Filter Tabs Header -->
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-conveyor-belt text-cyan-400"></i>
+            <h3 class="text-sm font-bold text-slate-200">待辨識垃圾傳送帶 (18 種高畫質測試樣本)</h3>
+          </div>
+
+          <!-- Category Filter Buttons -->
+          <div class="flex items-center space-x-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+            <button class="filter-btn active px-3 py-1 rounded-lg font-medium transition bg-cyan-600 text-white" data-filter="all">全部 (18)</button>
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition" data-filter="general">一般 (6)</button>
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition" data-filter="paper">紙類 (6)</button>
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition" data-filter="plastic">塑膠 (6)</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Drag Item Deck -->
+        <div id="trash-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 max-h-[380px] overflow-y-auto p-1">
+          <!-- Dynamically populated waste item cards -->
+        </div>
+
+        <!-- Instruction bar -->
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+          <span class="flex items-center gap-1.5">
+            <i class="fa-solid fa-hand-pointer text-cyan-400"></i>
+            拖曳任何垃圾卡片至上方對應的垃圾桶即完成 AI 自動辨識投遞
+          </span>
+          <button id="btn-reset" class="text-slate-400 hover:text-cyan-400 transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate-right"></i>重置計數
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Professor Defense Modal Dialog -->
+  <div id="defense-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-2xl border border-indigo-500/30 p-6 shadow-2xl relative animate-fade-in">
+      
+      <!-- Close Button -->
+      <button id="close-defense-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="p-3 bg-indigo-950 rounded-xl text-indigo-400 border border-indigo-500/30">
+          <i class="fa-solid fa-user-graduate text-2xl"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">專題審查口試答辯模擬 (Professor Q&A)</h3>
+          <p class="text-xs text-indigo-300">模擬畢業專題提問，評估 AI 模型與硬體控制整合細節</p>
+        </div>
+      </div>
+
+      <!-- Question Accordions -->
+      <div class="space-y-3 my-4 text-sm max-h-[60vh] overflow-y-auto pr-1">
+        
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q1: 系統如何處理瓶身壓扁或嚴重遮擋 (Occlusion) 的垃圾？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">
+            答：我們使用了 Data Augmentation（Mosaic, MixUp 與 random erase）進行 dataset 擴充，並採用 Feature Pyramid Network (FPN) 強化多尺度特徵擷取，使 YOLOv8 在遮擋率 40% 下仍具備 92% 辨識率。
+          </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q2: Edge AI 硬體邊緣端推理 (Inference) 的硬體規格與延遲？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">
+            答：本系統部署於 NVIDIA Jetson Orin Nano 邊緣板卡，透過 TensorRT FP16 量化優化，將推理延遲降至約 11.8ms，達到每秒 60 FPS 以上的實時影像串流處理能力。
+          </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q3: 超音波感應器與伺服馬達 (Servo) 如何搭配 AI 做閉迴路控制？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">
+            答：由 ESP32 微控制器進行即時監控，當超音波偵測物體接近低於 15cm 且 AI 給出信心度 Confidence > 85% 時，輸出 PWM 訊號驅動 SG90 馬達開啟 90 度桶蓋，並保持 3 秒後自動關閉。
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button id="btn-modal-ok" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm transition">
+          理解解答 / 返回模擬器
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Message -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-panel px-4 py-3 rounded-xl border border-cyan-500/40 text-xs flex items-center space-x-2 text-cyan-200">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+    <span id="toast-msg">訊息說明</span>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. DATASET: 18 Expanded Real Garbage Items (6 per category)
+       ========================================================================== */
+    const WASTE_DATA = [
+      // --- 一般垃圾 (General Waste) ---
+      { id: 'g1', name: '髒污塑膠餐盒', category: 'general', conf: 98.4, weight: 0.05, img: 'dirty_plastic_box.webp', svg: 'plastic box' },
+      { id: 'g2', name: '餅乾包裝', category: 'general', conf: 96.1, weight: 0.15, img: 'cookie_package.jpg', svg: 'food' },
+      { id: 'g3', name: '使用過衛生紙', category: 'general', conf: 99.1, weight: 0.01, img: 'tissue.jpg', svg: 'tissue' },
+      { id: 'g4', name: '塑膠吸管', category: 'general', conf: 95.7, weight: 0.02, img: 'straw.jpg', svg: 'straw' },
+      { id: 'g5', name: '口罩', category: 'general', conf: 94.8, weight: 0.25, img: 'mask.jpg', svg: 'mask' },
+      { id: 'g6', name: '舊木筷/竹籤', category: 'general', conf: 97.2, weight: 0.03, img: 'chopsticks.jpg', svg: 'stick' },
+
+      // --- 紙類 (Paper & Cardboard) ---
+      { id: 'p1', name: '快遞網購紙箱', category: 'paper', conf: 99.5, weight: 0.35, img: 'box.webp', svg: 'box'  },
+      { id: 'p2', name: '舊報紙雜誌', category: 'paper', conf: 98.8, weight: 0.20, img: 'newspaper.jpg', svg: 'newspaper'  },
+      { id: 'p3', name: '乾淨牛皮紙袋', category: 'paper', conf: 97.9, weight: 0.08, img: 'paperbag.jpg', svg: 'paperbag'  },
+      { id: 'p4', name: '辦公廢影印紙', category: 'paper', conf: 99.2, weight: 0.04, img: 'doc.webp', svg: 'doc'  },
+      { id: 'p5', name: '雞蛋包裝紙盒', category: 'paper', conf: 96.4, weight: 0.15, img: 'eggbox.png', svg: 'eggbox'  },
+      { id: 'p6', name: '牛奶紙盒', category: 'paper', conf: 97.6, weight: 0.06, img: 'milkbox.png', svg: 'milkbox'  },
+
+      // --- 塑膠類 (Plastics & Bottles) ---
+      { id: 'l1', name: '透明 PET 寶特瓶', category: 'plastic', conf: 99.7, weight: 0.05, img: 'waterbottle.webp', svg: 'waterbottle'  },
+      { id: 'l2', name: '外帶塑膠飲料杯', category: 'plastic', conf: 98.1, weight: 0.03, img: 'drink.jpg', svg: 'drink'  },
+      { id: 'l3', name: '洗髮精 HDPE 瓶', category: 'plastic', conf: 97.5, weight: 0.18, img: 'shampoo.jpg', svg: 'shampoo '  },
+      { id: 'l4', name: '洗衣精塑膠罐', category: 'plastic', conf: 96.9, weight: 0.28, img: 'washer.webp', svg: 'laundry'  },
+      { id: 'l5', name: '塑膠保鮮盒', category: 'plastic', conf: 95.3, weight: 0.11, img: 'plasticbox.png', svg: 'plasticbox'  },
+      { id: 'l6', name: '彩色瓶蓋套件', category: 'plastic', conf: 98.6, weight: 0.01, img: 'bottlecap.png', svg: 'bottlecap'  }
+    ];
+
+    /* Application Global State */
+    let counts = { general: 0, paper: 0, plastic: 0 };
+    let totalWeight = { general: 0, paper: 0, plastic: 0 };
+    let chartInstance = null;
+    let autoDemoInterval = null;
+    let draggedItemData = null;
+
+    /* Web Audio API for Futuristic Sound Effects */
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'scan') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16); // G5
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(110, audioCtx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.25);
+        }
+      } catch (e) {
+        // Audio fallback mute
+      }
+    }
+
+    // Initialize Chart.js Donut Chart
+    function initChart() {
+      const ctx = document.getElementById('category-chart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['一般垃圾', '紙類', '塑膠類'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#64748b', '#3b82f6', '#f59e0b'],
+            borderWidth: 2,
+            borderColor: '#0f172a'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+
+    // Render Waste Item Deck Cards
+    function renderWasteDeck(filter = 'all') {
+      const grid = document.getElementById('trash-grid');
+      grid.innerHTML = '';
+
+      const filtered = filter === 'all' 
+        ? WASTE_DATA 
+        : WASTE_DATA.filter(item => item.category === filter);
+
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'trash-card glass-panel bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-2.5 flex flex-col items-center justify-between cursor-grab active:cursor-grabbing transition-all duration-200 hover:-translate-y-1 hover:shadow-lg relative group';
+        card.setAttribute('draggable', 'true');
+        card.dataset.id = item.id;
+
+        // Category Tag Dot Color
+        const dotColor = item.category === 'general' ? 'bg-slate-400' : (item.category === 'paper' ? 'bg-blue-500' : 'bg-amber-500');
+
+        card.innerHTML = `
+          <div class="w-full flex justify-between items-center text-[9px] font-mono-tech mb-1">
+            <span class="inline-block w-2 h-2 rounded-full ${dotColor}"></span>
+            <span class="text-slate-400">${item.conf}%</span>
+          </div>
+          <div class="w-16 h-16 rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center mb-2 border border-slate-800 group-hover:border-slate-700 relative">
+<img src="${item.img}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\'w-full h-full flex items-center justify-center text-xs font-bold text-slate-400\'>${item.name}</div>'">          </div>
+          <span class="text-xs font-semibold text-slate-200 text-center truncate w-full">${item.name}</span>
+          <span class="text-[10px] text-slate-500 font-mono-tech mt-0.5">${item.weight} kg</span>
+        `;
+
+        // Event listeners for Drag & Drop
+        card.addEventListener('dragstart', (e) => handleDragStart(e, item));
+        card.addEventListener('dragend', handleDragEnd);
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Drag Start Handler
+    function handleDragStart(e, item) {
+      draggedItemData = item;
+      e.dataTransfer.setData('text/plain', item.id);
+      playSound('scan');
+
+      // Update AI Camera HUD Box
+      const bb = document.getElementById('bounding-box');
+      const label = document.getElementById('bb-label');
+      const conf = document.getElementById('bb-conf');
+      const targetDisplay = document.getElementById('target-class-display');
+      const camPlaceholder = document.getElementById('camera-placeholder');
+
+      label.innerText = item.name.substring(0, 10);
+      conf.innerText = `${item.conf}%`;
+      targetDisplay.innerText = item.name;
+      targetDisplay.className = item.category === 'general' ? 'text-slate-300' : (item.category === 'paper' ? 'text-blue-400' : 'text-amber-400');
+      
+      camPlaceholder.style.opacity = '0.2';
+      bb.classList.add('glow-cyan');
+    }
+
+    // Drag End Handler
+    function handleDragEnd() {
+      const bb = document.getElementById('bounding-box');
+      bb.classList.remove('glow-cyan');
+      document.getElementById('camera-placeholder').style.opacity = '1';
+    }
+
+    // Setup Smart Bin Drop Target Event Listeners
+    function setupBinTargets() {
+      const bins = document.querySelectorAll('.bin-container');
+
+      bins.forEach(bin => {
+        const binCategory = bin.dataset.category;
+
+        // Dragover: Distance sensor & Lid opening mechanism
+        bin.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (!draggedItemData) return;
+
+          bin.querySelector('.ultra-dist').innerText = '08cm -> Trigger';
+          bin.querySelector('.ultra-dist').classList.add('text-emerald-400');
+
+          if (draggedItemData.category === binCategory) {
+            bin.classList.add('open');
+            bin.querySelector('.led-light').className = 'led-light w-2 h-2 rounded-full bg-emerald-500 glow-green';
+            bin.querySelector('.lcd-text').innerText = 'MATCH: OPENING LID';
+            bin.querySelector('.lcd-text').className = 'lcd-text text-emerald-400';
+          } else {
+            bin.classList.add('shake');
+            bin.querySelector('.led-light').className = 'led-light w-2 h-2 rounded-full bg-rose-500';
+            bin.querySelector('.lcd-text').innerText = 'MISMATCH WARNING!';
+            bin.querySelector('.lcd-text').className = 'lcd-text text-rose-400 animate-pulse';
+          }
+        });
+
+        // Dragleave: Reset Lid
+        bin.addEventListener('dragleave', () => {
+          resetBinVisual(bin);
+        });
+
+        // Drop Event
+        bin.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (!draggedItemData) return;
+
+          if (draggedItemData.category === binCategory) {
+            // Correct Sort Drop
+            processSortingSuccess(draggedItemData, bin);
+          } else {
+            // Incorrect Sort Drop
+            processSortingError(bin);
+          }
+
+          resetBinVisual(bin);
+          draggedItemData = null;
+        });
+      });
+    }
+
+    function resetBinVisual(bin) {
+      bin.classList.remove('open', 'shake');
+      bin.querySelector('.ultra-dist').innerText = '25cm';
+      bin.querySelector('.ultra-dist').classList.remove('text-emerald-400');
+      bin.querySelector('.led-light').className = 'led-light w-2 h-2 rounded-full bg-slate-600';
+      
+      const cat = bin.dataset.category;
+      const weight = totalWeight[cat].toFixed(2);
+      bin.querySelector('.lcd-text').innerText = `READY (${weight} kg)`;
+      bin.querySelector('.lcd-text').className = 'lcd-text text-slate-400';
+    }
+
+   function processSortingSuccess(item, bin) {
+  // 檢查加上目前物品後的總重量是否會超過 6 公斤 (6000g 或 6kg，依你的單位而定)
+  const MAX_WEIGHT = 6; // 假設單位為公斤 (Kg)
+  
+  if (totalWeight[item.category] + item.weight > MAX_WEIGHT) {
+    playSound('error'); // 可選：播放失敗/警告音效
+    showToast(`警告：[${getCategoryName(item.category)}] 垃圾桶已滿，無法繼續投遞！`, 'error');
+    return; // 攔截並中止執行
+  }
+
+  // 未超過限制才進行累加與更新
+  counts[item.category]++;
+  totalWeight[item.category] += item.weight;
+
+  playSound('success');
+  showToast(`成功辨識投遞：[${item.name}] 至 ${getCategoryName(item.category)}`, 'success');
+
+  // Update counters & chart
+  updateTelemetryUI();
+}
+    function processSortingError(bin) {
+      playSound('error');
+      showToast(`分類不匹配！請重試投遞至正確類別垃圾桶`, 'error');
+    }
+
+    function getCategoryName(cat) {
+      return cat === 'general' ? '一般垃圾桶' : (cat === 'paper' ? '紙類回收桶' : '塑膠類桶');
+    }
+
+    function updateTelemetryUI() {
+      document.getElementById('cnt-general').innerText = counts.general;
+      document.getElementById('cnt-paper').innerText = counts.paper;
+      document.getElementById('cnt-plastic').innerText = counts.plastic;
+
+      if (chartInstance) {
+        chartInstance.data.datasets[0].data = [counts.general, counts.paper, counts.plastic];
+        chartInstance.update();
+      }
+
+      // Update bin LCD weight readouts
+      document.querySelectorAll('.bin-container').forEach(bin => {
+        const cat = bin.dataset.category;
+        const w = totalWeight[cat].toFixed(2);
+        bin.querySelector('.lcd-text').innerText = `READY (${w} kg)`;
+      });
+    }
+
+    // Toast Notification helper
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.innerText = msg;
+      if (type === 'success') {
+        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+        toast.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 glass-panel px-4 py-3 rounded-xl border border-emerald-500/40 text-xs flex items-center space-x-2 text-emerald-200';
+      } else {
+        toastIcon.className = 'fa-solid fa-triangle-exclamation text-rose-400 text-base';
+        toast.className = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 glass-panel px-4 py-3 rounded-xl border border-rose-500/40 text-xs flex items-center space-x-2 text-rose-200';
+      }
+
+      setTimeout(() => {
+        toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-20 opacity-0');
+      }, 3000);
+    }
+
+    // Toggle Auto Presentation Showcase
+    function toggleAutoDemo() {
+      const btn = document.getElementById('btn-auto-demo');
+      if (autoDemoInterval) {
+        clearInterval(autoDemoInterval);
+        autoDemoInterval = null;
+        btn.innerHTML = '<i class="fa-solid fa-play mr-1"></i>自動展示 Demo';
+        btn.className = 'px-2.5 py-1 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-300 rounded text-xs transition';
+        showToast('已停止自動展示模式');
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-square mr-1"></i>停止展示';
+        btn.className = 'px-2.5 py-1 bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/40 text-amber-300 rounded text-xs transition';
+        showToast('啟動 AI 自動辨識分類展示模式');
+
+        autoDemoInterval = setInterval(() => {
+          const randomItem = WASTE_DATA[Math.floor(Math.random() * WASTE_DATA.length)];
+          const targetBin = document.getElementById(`bin-${randomItem.category}`);
+          
+          draggedItemData = randomItem;
+          targetBin.classList.add('open');
+          
+          setTimeout(() => {
+            processSortingSuccess(randomItem, targetBin);
+            targetBin.classList.remove('open');
+            draggedItemData = null;
+          }, 600);
+        }, 2200);
+      }
+    }
+
+    // Dynamic telemetry fluctuating effect for realistic lab metrics
+    function startTelemetryJitter() {
+      setInterval(() => {
+        const fps = (59.2 + Math.random() * 1.6).toFixed(1);
+        const lat = (11.2 + Math.random() * 1.2).toFixed(1);
+        document.getElementById('fps-counter').innerText = fps;
+        document.getElementById('latency-counter').innerText = `${lat}ms`;
+      }, 1500);
+    }
+
+    // Event Bindings
+    document.addEventListener('DOMContentLoaded', () => {
+      initChart();
+      renderWasteDeck('all');
+      setupBinTargets();
+      startTelemetryJitter();
+
+      // Filter Buttons
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.filter-btn').forEach(b => {
+            b.className = 'filter-btn px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition';
+          });
+          e.target.className = 'filter-btn active px-3 py-1 rounded-lg font-medium transition bg-cyan-600 text-white';
+          renderWasteDeck(e.target.dataset.filter);
+        });
+      });
+
+      // Professor Defense Modal Controls
+      const modal = document.getElementById('defense-modal');
+      document.getElementById('btn-defense-mode').addEventListener('click', () => modal.classList.remove('hidden'));
+      document.getElementById('close-defense-modal').addEventListener('click', () => modal.classList.add('hidden'));
+      document.getElementById('btn-modal-ok').addEventListener('click', () => modal.classList.add('hidden'));
+
+      // Auto Demo Button
+      document.getElementById('btn-auto-demo').addEventListener('click', toggleAutoDemo);
+
+      // Reset Button
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        counts = { general: 0, paper: 0, plastic: 0 };
+        totalWeight = { general: 0, paper: 0, plastic: 0 };
+        updateTelemetryUI();
+        showToast('已重置所有分類數量統計資料');
+      });
+    });
+  </script>
+</body>
+</html>
