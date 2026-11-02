@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Journal - 韓系冰藍氣質飾品</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,400&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ice: {
+                            50: '#F2F6FA',
+                            100: '#E2ECF4',
+                            200: '#C7D9E8',
+                            300: '#9BBFD9',
+                            400: '#6FA3C7',
+                            500: '#4B88B3',
+                            600: '#3A6F94',
+                        },
+                        dusty: {
+                            soft: '#E8F0F7',
+                            blue: '#5B86A6',
+                            deep: '#2C4D63'
+                        },
+                        navy: {
+                            light: '#2A4365',
+                            DEFAULT: '#1E3A8A',
+                            deep: '#102A45'
+                        },
+                        slate: '#52606D'
+                    },
+                    fontFamily: {
+                        serif: ['Noto Serif TC', 'Playfair Display', 'serif'],
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                        enSerif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F2F6FA;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', 'Playfair Display', serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F2F6FA;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #C7D9E8;
+            border-radius: 99px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6FA3C7;
+        }
+
+        .product-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px -5px rgba(30, 58, 138, 0.08), 0 8px 10px -6px rgba(30, 58, 138, 0.08);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-[#F2F6FA] text-slate-700 font-sans min-h-screen flex flex-col justify-between selection:bg-ice-200">
+
+    <!-- Toast 通知容器 -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none w-[calc(100%-2rem)] max-w-md"></div>
+
+    <div class="w-full">
+        <!-- 頂部跑馬燈公告 -->
+        <div class="bg-gradient-to-r from-navy-deep via-dusty-blue to-navy-deep text-white text-xs py-2 px-4 text-center font-medium tracking-widest shadow-md flex items-center justify-center overflow-hidden">
+            <marquee class="max-w-7xl w-full">
+                ✨ <strong class="font-serif italic font-normal tracking-wide">Azure Journal</strong> 韓系冰藍海洋限定新品上架 ｜ 全館滿 $1,000 即享現折 $100 優惠 ｜ 滿 $499 享超商免運費 ✨
+            </marquee>
+        </div>
+
+        <!-- 頂部主導覽列 (全響應式 RWD 佈局) -->
+        <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-ice-200 shadow-sm w-full">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+                
+                <div class="flex items-center justify-between w-full md:w-auto">
+                    <!-- 品牌 Logo -->
+                    <div class="flex items-center gap-3 cursor-pointer group" onclick="switchView('store')">
+                        <div class="flex flex-col">
+                            <span class="font-serif text-xl sm:text-2xl font-bold tracking-widest text-navy-deep group-hover:text-dusty-blue transition">Azure Journal</span>
+                            <span class="text-[9px] sm:text-[10px] tracking-[0.2em] text-ice-600 uppercase font-medium mt-0.5">Blue Aesthetic Jewelry</span>
+                        </div>
+                    </div>
+
+                    <!-- 行動端選購清單快速鍵 -->
+                    <div class="flex items-center gap-2 md:hidden">
+                        <button onclick="toggleCartModal(true)" class="relative bg-white hover:bg-ice-50 text-slate border border-ice-200 p-2 rounded-full flex items-center justify-center font-medium text-xs shadow-sm transition">
+                            <i class="fa-solid fa-bag-shopping text-dusty-blue text-sm"></i>
+                            <span id="cart-badge-mobile" class="absolute -top-1 -right-1 bg-navy-deep text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-sm">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 搜尋列 -->
+                <div class="w-full md:flex-1 md:max-w-md mx-0 md:mx-2">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-ice-400 text-xs"></i>
+                        <input id="search-input" type="text" placeholder="搜尋 冰藍垂墜、海藍寶、髮飾、鎖骨鍊..." onkeyup="handleSearch(event)"
+                            class="w-full border border-ice-200 rounded-full pl-9 pr-4 py-1.5 sm:py-2 bg-ice-50/50 text-slate focus:outline-none focus:ring-2 focus:ring-dusty-blue/20 focus:border-dusty-blue text-xs transition">
+                    </div>
+                </div>
+
+                <!-- 右側控制與會員區 -->
+                <div class="flex items-center justify-between md:justify-end w-full md:w-auto gap-2">
+                    <!-- 會員登入狀態 -->
+                    <div id="user-status-display"
+                        class="hidden text-xs text-navy-deep font-medium bg-ice-100 px-3 py-1.5 rounded-full border border-ice-200 flex items-center gap-1.5 truncate max-w-[140px] sm:max-w-none">
+                        <i class="fa-solid fa-user-check text-dusty-blue shrink-0"></i>
+                        <span id="current-username" class="truncate">會員</span>
+                        <button onclick="handleCustomerLogout()" class="text-slate/60 hover:text-red-500 ml-1 transition shrink-0" title="登出">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+
+                    <button id="auth-btn" onclick="openCustomerAuthModal()"
+                        class="bg-white hover:bg-ice-50 text-navy-deep border border-ice-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-1.5 font-medium text-xs shadow-sm transition shrink-0">
+                        <i class="fa-regular fa-user text-dusty-blue"></i> <span>登入/註冊</span>
+                    </button>
+
+                    <!-- 前後台切換鍵 -->
+                    <div class="bg-ice-100 p-1 rounded-full border border-ice-200 flex items-center text-xs shrink-0">
+                        <button id="nav-btn-store" onclick="switchView('store')"
+                            class="px-2.5 sm:px-3 py-1 rounded-full font-medium transition bg-dusty-blue text-white shadow-sm">
+                            <i class="fa-solid fa-gem mr-1"></i> 前台
+                        </button>
+                        <button id="nav-btn-admin" onclick="openAdminLoginModal()"
+                            class="px-2.5 sm:px-3 py-1 rounded-full font-medium transition text-slate hover:text-navy-deep">
+                            <i class="fa-solid fa-user-shield mr-1"></i> 後台
+                        </button>
+                    </div>
+
+                    <!-- 我的訂單紀錄 -->
+                    <button onclick="openMyOrdersModal()" class="bg-white hover:bg-ice-50 text-slate border border-ice-200 p-2 sm:p-2.5 rounded-full shadow-sm transition shrink-0" title="查詢個人訂單">
+                        <i class="fa-solid fa-receipt text-dusty-blue text-xs"></i>
+                    </button>
+
+                    <!-- 電腦端選購清單按鈕 -->
+                    <button onclick="toggleCartModal(true)"
+                        class="hidden md:flex bg-white hover:bg-ice-50 text-slate border border-ice-200 px-3.5 py-2 rounded-full items-center gap-2 font-medium text-xs shadow-sm transition shrink-0">
+                        <i class="fa-solid fa-bag-shopping text-dusty-blue text-sm"></i>
+                        <span>選購清單</span>
+                        <span id="cart-badge" class="bg-navy-deep text-white font-bold text-[10px] px-2 py-0.5 rounded-full min-w-[18px] text-center shadow-sm">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 分類選單列 (RWD 可滑動) -->
+        <nav class="bg-white/80 backdrop-blur border-b border-ice-200 text-xs text-slate shadow-sm w-full">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center overflow-x-auto whitespace-nowrap py-2.5 gap-4 sm:gap-6 no-scrollbar">
+                <span class="font-serif font-bold text-navy-deep flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-droplet text-dusty-blue"></i> 飾品分類：
+                </span>
+                <button onclick="filterCategory('all')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium text-navy-deep border-b-2 border-dusty-blue pb-0.5" data-cat="all">全部飾品</button>
+                <button onclick="filterCategory('耳環')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="耳環">耳環 / 耳夾</button>
+                <button onclick="filterCategory('項鍊')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="項鍊">項鍊 / 鎖骨鍊</button>
+                <button onclick="filterCategory('髮飾')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="髮飾">髮飾 / 配件</button>
+                <button onclick="filterCategory('戒指')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="戒指">戒指 / 情侶戒</button>
+                <button onclick="filterCategory('手鍊')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="手鍊">手鍊 / 手環</button>
+
+                <button onclick="resetDataDemo()" class="ml-auto shrink-0 text-[11px] text-ice-600 hover:text-navy-deep transition underline flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> 重置模擬資料
+                </button>
+            </div>
+        </nav>
+
+        <!-- VIEW 1: 顧客前台視圖 -->
+        <main id="view-store" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-fade-in w-full">
+            <!-- Hero Banner 展示區 (RWD 排版優化) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 sm:mb-10">
+                <div class="lg:col-span-2 bg-gradient-to-r from-ice-100 via-ice-200/50 to-white rounded-3xl p-6 sm:p-10 border border-ice-200 shadow-sm flex flex-col justify-center relative overflow-hidden min-h-[220px] sm:min-h-[240px]">
+                    <div class="relative z-10 max-w-lg">
+                        <span class="font-en text-[10px] sm:text-xs tracking-[0.2em] font-bold text-navy-deep uppercase bg-white/90 px-3 py-1 rounded-full border border-ice-300 shadow-sm inline-block">
+                            Ocean & Blue Aesthetic
+                        </span>
+                        <h1 class="text-xl sm:text-3xl font-serif text-slate font-normal mt-3 mb-2 leading-relaxed">
+                            莫蘭迪冰藍 ‧ <span class="italic font-en text-navy-deep font-bold">Deep Sea Glow</span>
+                        </h1>
+                        <p class="text-xs text-slate/80 leading-relaxed mb-5">
+                            汲取淡雅海藍寶與夜空琉璃的湛藍微光，低調流露韓系極簡與澄澈優雅的唯美氛圍。
+                        </p>
+                        <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+                            <button onclick="filterCategory('耳環')" class="bg-navy-deep hover:bg-dusty-blue text-white text-xs font-medium px-5 py-2.5 rounded-full shadow-sm transition duration-300 flex items-center gap-2">
+                                探索冰藍耳環 <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                            <span class="text-xs text-navy-deep font-medium">全館滿 $1,000 折 $100</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-water absolute -right-6 -bottom-8 text-[140px] sm:text-[180px] text-ice-300/30 pointer-events-none"></i>
+                </div>
+
+                <div class="flex flex-col sm:flex-row lg:flex-col gap-4 justify-between">
+                    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-ice-200 shadow-sm flex items-center gap-4 flex-1">
+                        <div class="bg-ice-100 text-dusty-blue rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 text-lg">
+                            <i class="fa-solid fa-gift"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate">限定冰藍品牌禮盒包裝</div>
+                            <div class="text-[11px] text-slate/80 mt-0.5">每筆訂單均附贈韓系霧藍質感絨布袋與擦銀布</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-ice-200 shadow-sm flex items-center gap-4 flex-1">
+                        <div class="bg-ice-100 text-dusty-blue rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 text-lg">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate">滿 $499 享超商免運</div>
+                            <div class="text-[11px] text-slate/80 mt-0.5">7-11 / 全家門市快捷到貨與包裹追蹤</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 熱銷排行榜區塊 (Top Sales Section - 可收合) -->
+            <section class="bg-white rounded-3xl border border-ice-200 shadow-sm mb-8 sm:mb-10 overflow-hidden transition-all duration-300">
+                <div class="p-5 sm:p-7 flex items-center justify-between gap-4 cursor-pointer select-none" onclick="toggleTopSalesSection()">
+                    <div>
+                        <span class="text-[11px] sm:text-xs font-bold text-dusty-blue tracking-widest uppercase"><i class="fa-solid fa-fire text-amber-500 mr-1"></i> TOP RANKING</span>
+                        <h2 class="text-lg sm:text-xl font-serif font-bold text-navy-deep mt-0.5">湛藍人氣飾品 Top 5 排行榜</h2>
+                    </div>
+                    <button id="toggle-top-sales-btn" class="bg-ice-100 text-navy-deep hover:bg-ice-200 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition font-bold text-xs shrink-0">
+                        <i id="toggle-top-sales-icon" class="fa-solid fa-chevron-up transition-transform duration-300"></i>
+                    </button>
+                </div>
+
+                <!-- 可收合內容區塊 -->
+                <div id="top-sales-content" class="px-5 pb-5 sm:px-7 sm:pb-7 pt-0 border-t border-ice-100 animate-fade-in">
+                    <p class="text-xs text-slate/60 my-3">實時依據累積銷量動態計算排行與統計</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                        <!-- 左側 TOP 5 列表 -->
+                        <div id="top-sales-list" class="lg:col-span-7 space-y-2.5"></div>
+                        <!-- 右側 Chart.js 長條圖 -->
+                        <div class="lg:col-span-5 bg-ice-50/60 p-4 rounded-2xl border border-ice-200 h-56 sm:h-64 flex flex-col justify-center">
+                            <canvas id="topSalesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 商品標題與篩選資訊 -->
+            <div class="flex items-center justify-between mb-6 border-b border-ice-200 pb-4">
+                <div>
+                    <h2 id="category-title" class="text-lg sm:text-xl font-serif font-bold text-navy-deep tracking-wide">全部湛藍飾品</h2>
+                    <p class="text-xs text-slate/60 mt-0.5">挑選專屬於您的莫蘭迪藍色系精緻飾品</p>
+                </div>
+                <span id="product-count-label" class="text-xs bg-white px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-ice-200 text-slate shadow-sm font-medium shrink-0">共 0 款</span>
+            </div>
+
+            <!-- 商品網格區 (RWD 流體響應式 1 -> 2 -> 3 -> 4 欄) -->
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"></div>
+        </main>
+
+        <!-- VIEW 2: 商家後台視圖 -->
+        <main id="view-admin" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-fade-in w-full">
+            <div class="bg-white p-5 sm:p-6 rounded-3xl border border-ice-200 shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-navy-deep">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-serif font-bold text-slate flex items-center gap-2">
+                        <i class="fa-solid fa-store text-dusty-blue"></i> 商家後台與 ABC 庫存管控系統
+                    </h2>
+                    <p class="text-xs text-slate/70 mt-1">即時修改品名/圖片/售價/庫存，並運用 ABC 分析法精準掌握資金佔比。</p>
+                </div>
+                <div class="flex gap-2.5 w-full sm:w-auto">
+                    <button onclick="openAddProductModal()" class="flex-1 sm:flex-none bg-navy-deep hover:bg-dusty-blue text-white text-xs px-4 py-2.5 rounded-full transition shadow-sm font-medium flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> 新增飾品
+                    </button>
+                    <button onclick="logoutAdmin()" class="text-xs text-red-500 hover:text-white hover:bg-red-500 bg-red-50 border border-red-200 px-4 py-2.5 rounded-full transition font-medium shrink-0">
+                        登出後台
+                    </button>
+                </div>
+            </div>
+
+            <!-- 數據儀表板 (RWD 卡片 Grid) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6 sm:mb-8">
+                <div class="bg-white p-5 rounded-3xl border border-ice-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">總銷售額 (GMV)</div>
+                        <div id="stat-gmv" class="text-2xl font-serif font-bold text-navy-deep mt-1 rounded">$0</div>
+                    </div>
+                    <div class="bg-ice-100 text-navy-deep p-3.5 rounded-2xl text-base shrink-0"><i class="fa-solid fa-sack-dollar text-dusty-blue"></i></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-ice-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">累積訂單數</div>
+                        <div id="stat-orders-count" class="text-2xl font-serif font-bold text-slate mt-1">0 筆</div>
+                    </div>
+                    <div class="bg-ice-100 text-slate p-3.5 rounded-2xl text-base shrink-0"><i class="fa-solid fa-receipt text-dusty-blue"></i></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-ice-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">平均客單價 (AOV)</div>
+                        <div id="stat-aov" class="text-2xl font-serif font-bold text-dusty-blue mt-1">$0</div>
+                    </div>
+                    <div class="bg-ice-100 text-dusty-blue p-3.5 rounded-2xl text-base shrink-0"><i class="fa-solid fa-calculator"></i></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-ice-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">庫存總價值</div>
+                        <div id="stat-total-stock-value" class="text-2xl font-serif font-bold text-emerald-700 mt-1">$0</div>
+                    </div>
+                    <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-2xl text-base shrink-0"><i class="fa-solid fa-vault"></i></div>
+                </div>
+            </div>
+
+            <!-- ABC 分析說明與圓餅圖區塊 (RWD 優化) -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-ice-200 shadow-sm mb-6 sm:mb-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 border-b border-ice-100 pb-3">
+                    <div>
+                        <h3 class="font-serif font-bold text-navy-deep text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-dusty-blue"></i> ABC 庫存資金佔比分析 (ABC Inventory Analysis)
+                        </h3>
+                        <p class="text-xs text-slate/60 mt-0.5">依據「單價 × 現有庫存」計算總資金佔比進行重度/常規/簡化管制</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl">
+                            <div class="font-bold text-rose-800 flex items-center gap-1">
+                                <span class="bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0">A</span>
+                                類品項 (高價值/重點控管)
+                            </div>
+                            <p class="text-[11px] text-rose-700/80 mt-1.5">佔資金約 70%。需每日監控庫存、防止積壓缺貨。</p>
+                            <div id="abc-a-stat" class="font-serif font-bold text-rose-900 text-base mt-2">0 件 ($0)</div>
+                        </div>
+
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
+                            <div class="font-bold text-amber-800 flex items-center gap-1">
+                                <span class="bg-amber-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0">B</span>
+                                類品項 (中價值/常規控管)
+                            </div>
+                            <p class="text-[11px] text-amber-700/80 mt-1.5">佔資金約 20%。維持常規訂購與每週安全庫存檢視。</p>
+                            <div id="abc-b-stat" class="font-serif font-bold text-amber-900 text-base mt-2">0 件 ($0)</div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                            <div class="font-bold text-slate-800 flex items-center gap-1">
+                                <span class="bg-slate-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0">C</span>
+                                類品項 (低價值/簡化控管)
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-1.5">佔資金約 10%（品項多）。採大批採購、簡化盤點。</p>
+                            <div id="abc-c-stat" class="font-serif font-bold text-slate-900 text-base mt-2">0 件 ($0)</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-ice-50/50 p-4 rounded-2xl border border-ice-200 h-48 flex items-center justify-center">
+                        <canvas id="abcPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 後台管理分頁與表格 (RWD 橫向滾動控制) -->
+            <div class="bg-white rounded-3xl shadow-sm border border-ice-200 overflow-hidden mb-8">
+                <div class="bg-ice-50 border-b border-ice-200 flex overflow-x-auto">
+                    <button onclick="switchAdminTab('inventory')" id="tab-btn-inventory" class="px-5 sm:px-6 py-3.5 text-xs font-bold border-b-2 border-navy-deep text-navy-deep transition shrink-0">
+                        <i class="fa-solid fa-boxes-stacked mr-1.5"></i> 商品編輯與 ABC 庫存管理
+                    </button>
+                    <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="px-5 sm:px-6 py-3.5 text-xs font-bold text-slate/60 hover:text-navy-deep border-b-2 border-transparent transition shrink-0">
+                        <i class="fa-solid fa-list-check mr-1.5"></i> 銷售紀錄與訂單狀態
+                    </button>
+                </div>
+
+                <!-- 庫存管理頁 -->
+                <div id="admin-sec-inventory" class="p-4 sm:p-6">
+                    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-ice-400 text-xs"></i>
+                            <input id="admin-product-search" type="search" oninput="state.adminProductQuery = this.value; renderAdmin()" placeholder="查詢商品名稱、編號、材質..." class="w-full border border-ice-200 rounded-xl pl-9 pr-4 py-2.5 bg-ice-50/50 text-xs focus:outline-none focus:border-dusty-blue">
+                        </div>
+                        <select id="admin-product-category" onchange="state.adminProductCategory = this.value; renderAdmin()" class="sm:w-44 border border-ice-200 rounded-xl px-3 py-2.5 bg-white text-xs text-slate focus:outline-none focus:border-dusty-blue">
+                            <option value="all">所有分類</option>
+                            <option value="耳環">耳環</option>
+                            <option value="項鍊">項鍊</option>
+                            <option value="髮飾">髮飾</option>
+                            <option value="手鍊">手鍊</option>
+                            <option value="手環">手環</option>
+                            <option value="戒指">戒指</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs min-w-[760px]">
+                            <thead>
+                                <tr class="bg-ice-50 text-slate font-bold border-b border-ice-200">
+                                    <th class="p-3">圖片與網址預覽</th>
+                                    <th class="p-3">飾品名稱 (可編輯)</th>
+                                    <th class="p-3">商品分類</th>
+                                    <th class="p-3">ABC 分類</th>
+                                    <th class="p-3">售價 ($)</th>
+                                    <th class="p-3">庫存</th>
+                                    <th class="p-3">庫存總價值</th>
+                                    <th class="p-3">銷量</th>
+                                    <th class="p-3">狀態</th>
+                                    <th class="p-3 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-inventory-tbody" class="divide-y divide-ice-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 銷售紀錄頁 -->
+                <div id="admin-sec-orders" class="hidden p-4 sm:p-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs min-w-[650px]">
+                            <thead>
+                                <tr class="bg-ice-50 text-slate font-bold border-b border-ice-200">
+                                    <th class="p-3">訂單編號</th>
+                                    <th class="p-3">購買會員</th>
+                                    <th class="p-3">品項與數量</th>
+                                    <th class="p-3">支付方式</th>
+                                    <th class="p-3">應付總額</th>
+                                    <th class="p-3">訂單狀態</th>
+                                    <th class="p-3 text-center">狀態更新</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-orders-tbody" class="divide-y divide-ice-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL 1: 會員登入/註冊 Modal -->
+    <div id="customer-auth-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 sm:p-8 border border-ice-200 relative">
+            <button onclick="closeCustomerAuthModal()" class="absolute top-5 right-5 text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition">✕</button>
+            <h3 id="auth-modal-title" class="text-xl font-serif font-bold text-navy-deep mb-1.5">會員登入</h3>
+            <p id="auth-modal-desc" class="text-xs text-slate/70 mb-6">請登入以繼續完成選購與結帳。</p>
+
+            <form onsubmit="handleCustomerAuthSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">電子信箱 / 帳號</label>
+                    <input type="text" id="auth-email" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="user@example.com">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">密碼</label>
+                    <input type="password" id="auth-password" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="••••••••">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3 rounded-full transition shadow-md mt-3">登入</button>
+            </form>
+
+            <div class="mt-6 text-center text-xs text-slate/70 border-t border-ice-100 pt-4">
+                <span id="auth-switch-text">還沒有帳號？</span>
+                <button onclick="toggleAuthMode()" id="auth-switch-btn" class="text-dusty-blue font-bold ml-1 hover:underline">去註冊</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: 商家後台登入 Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 sm:p-8 border border-ice-200 relative">
+            <button onclick="closeAdminLoginModal()" class="absolute top-5 right-5 text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition">✕</button>
+            <h3 class="text-xl font-serif font-bold text-navy-deep mb-1.5">商家後台登入</h3>
+            <p class="text-xs text-slate/70 mb-6">預設帳號：<code class="bg-ice-100 px-1.5 py-0.5 rounded text-navy-deep font-bold">admin</code>，密碼：<code class="bg-ice-100 px-1.5 py-0.5 rounded text-navy-deep font-bold">123456</code></p>
+
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">帳號</label>
+                    <input type="text" id="admin-user" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="admin">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">密碼</label>
+                    <input type="password" id="admin-pass" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="123456">
+                </div>
+                <button type="submit" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3 rounded-full transition shadow-md mt-3">登入後台</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: 商品詳情彈窗 Modal -->
+    <div id="product-detail-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-xl max-w-3xl w-full overflow-hidden relative max-h-[90vh] flex flex-col md:flex-row border border-ice-200">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-ice-50 hover:bg-ice-100 text-slate w-8 h-8 rounded-full flex items-center justify-center z-10 font-bold transition">✕</button>
+
+            <div class="md:w-1/2 bg-ice-50/50 flex items-center justify-center p-6">
+                <img id="modal-img" src="" alt="飾品圖片" class="max-h-64 sm:max-h-80 w-full object-cover rounded-2xl shadow-sm">
+            </div>
+
+            <div class="md:w-1/2 p-6 sm:p-8 overflow-y-auto flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span id="modal-category" class="bg-ice-100 text-navy-deep text-[11px] font-medium px-2.5 py-0.5 rounded-full border border-ice-200">類別</span>
+                        <span id="modal-stock-badge" class="bg-ice-50 text-slate text-[11px] font-medium px-2.5 py-0.5 rounded-full">現貨供應</span>
+                    </div>
+
+                    <h2 id="modal-title" class="text-base sm:text-lg font-serif font-bold text-slate mb-2">飾品名稱</h2>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="text-dusty-blue text-xs flex" id="modal-rating-stars"></div>
+                        <span id="modal-rating-text" class="text-xs text-slate font-bold">4.9</span>
+                        <span class="text-xs text-ice-300">|</span>
+                        <span id="modal-sales" class="text-xs text-slate/70">已售出 120 件</span>
+                    </div>
+
+                    <div class="bg-ice-50 p-3.5 rounded-2xl mb-4 flex items-baseline gap-3 border border-ice-200">
+                        <span class="text-xs text-navy-deep font-bold">湛藍限定價</span>
+                        <span id="modal-price" class="text-2xl font-serif font-bold text-navy-deep">$0</span>
+                        <span id="modal-old-price" class="text-xs text-slate/50 line-through">$0</span>
+                    </div>
+
+                    <div class="space-y-2 text-xs text-slate/80 mb-6 border-t border-b border-ice-100 py-3.5">
+                        <p><strong><i class="fa-solid fa-gem text-dusty-blue mr-1"></i> 材質說明：</strong> <span id="modal-material">天然寶石 / S925銀</span></p>
+                        <p><strong><i class="fa-solid fa-sparkles text-dusty-blue mr-1"></i> 品牌包裝：</strong> 隨件附贈冰藍絨布袋與擦銀布。</p>
+                    </div>
+
+                    <div class="flex items-center gap-4 mb-6">
+                        <span class="text-xs font-bold text-slate">購買數量：</span>
+                        <div class="flex items-center border border-ice-200 rounded-full overflow-hidden bg-ice-50">
+                            <button onclick="changeModalQty(-1)" class="px-3 py-1 text-slate font-bold text-xs hover:bg-ice-200 transition">-</button>
+                            <input id="modal-qty-input" type="number" value="1" min="1" class="w-10 text-center text-xs py-1 bg-transparent focus:outline-none font-bold" readonly>
+                            <button onclick="changeModalQty(1)" class="px-3 py-1 text-slate font-bold text-xs hover:bg-ice-200 transition">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="modal-add-btn" onclick="addModalItemToCart()" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3 rounded-full text-xs shadow-sm transition duration-300 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bag-shopping"></i> 加入選購清單
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: 購物車選購清單 Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex justify-end backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md h-full flex flex-col justify-between shadow-2xl border-l border-ice-200 p-5 sm:p-6 animate-fade-in">
+            <div class="flex items-center justify-between border-b border-ice-200 pb-4">
+                <h3 class="font-serif font-bold text-navy-deep text-base flex items-center gap-2">
+                    <i class="fa-solid fa-bag-shopping text-dusty-blue"></i> 選購清單 (購物車)
+                </h3>
+                <button onclick="toggleCartModal(false)" class="text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition font-bold">✕</button>
+            </div>
+
+            <div id="cart-items-container" class="flex-1 overflow-y-auto my-4 space-y-3 pr-1"></div>
+
+            <div class="border-t border-ice-200 pt-4 space-y-3 bg-ice-50/50 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 p-5 sm:p-6">
+                <div class="space-y-1.5 text-xs text-slate">
+                    <div class="flex justify-between"><span>商品小計：</span><span id="cart-subtotal-display">$0</span></div>
+                    <div class="flex justify-between text-navy-deep font-medium"><span>滿千折百優惠：</span><span id="cart-discount-display">-$0</span></div>
+                    <div class="flex justify-between"><span>超商運費 (滿 $499 免運)：</span><span id="cart-shipping-display">$60</span></div>
+                    <div class="flex justify-between font-bold text-navy-deep text-sm border-t border-ice-200 pt-2">
+                        <span>預估總金額：</span><span id="cart-total-display" class="text-dusty-blue text-base">$0</span>
+                    </div>
+                </div>
+
+                <button onclick="openCheckoutModal()" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3.5 rounded-full text-xs shadow-md transition flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-arrow-right"></i> 前往填寫訂單與結帳
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: 結帳與付款資料填寫 Modal -->
+    <div id="checkout-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-ice-200 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeCheckoutModal()" class="absolute top-5 right-5 text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition">✕</button>
+            <h3 class="text-lg sm:text-xl font-serif font-bold text-navy-deep mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-file-invoice-dollar text-dusty-blue"></i> 填寫訂單與明細確認
+            </h3>
+
+            <form onsubmit="handleCheckoutSubmit(event)" class="space-y-4 text-xs">
+                <div class="bg-ice-50 p-4 rounded-2xl border border-ice-200 space-y-2.5">
+                    <div class="font-bold text-navy-deep mb-1 flex items-center gap-1.5"><i class="fa-solid fa-box-archive text-dusty-blue"></i> 訂單明細摘要</div>
+                    <div id="checkout-items-summary" class="space-y-1.5 text-slate max-h-32 overflow-y-auto pr-1"></div>
+                    <div class="border-t border-ice-200 pt-2.5 space-y-1.5 text-slate">
+                        <div class="flex justify-between"><span>商品小計：</span><span id="co-subtotal">$0</span></div>
+                        <div class="flex justify-between text-navy-deep font-medium"><span>滿千折百優惠：</span><span id="co-discount">-$0</span></div>
+                        <div class="flex justify-between"><span>運費 (滿 $499 免運)：</span><span id="co-shipping">$60</span></div>
+                        <div class="flex justify-between font-bold text-navy-deep text-sm border-t border-ice-200 pt-2">
+                            <span>應付總金額：</span><span id="co-total" class="text-dusty-blue text-base">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate mb-2">💳 選擇支付方式 *</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="border border-ice-200 rounded-2xl p-2.5 sm:p-3 text-center cursor-pointer flex flex-col items-center justify-center gap-1 hover:border-dusty-blue transition">
+                            <input type="radio" name="payment" value="信用卡線上支付" checked onchange="handlePaymentMethodChange(this.value)" class="accent-navy-deep">
+                            <span class="font-medium text-slate text-[11px] sm:text-xs">信用卡</span>
+                        </label>
+                        <label class="border border-ice-200 rounded-2xl p-2.5 sm:p-3 text-center cursor-pointer flex flex-col items-center justify-center gap-1 hover:border-dusty-blue transition">
+                            <input type="radio" name="payment" value="LINE Pay" onchange="handlePaymentMethodChange(this.value)" class="accent-navy-deep">
+                            <span class="font-medium text-slate text-[11px] sm:text-xs">LINE Pay</span>
+                        </label>
+                        <label class="border border-ice-200 rounded-2xl p-2.5 sm:p-3 text-center cursor-pointer flex flex-col items-center justify-center gap-1 hover:border-dusty-blue transition">
+                            <input type="radio" name="payment" value="超商取貨付款" onchange="handlePaymentMethodChange(this.value)" class="accent-navy-deep">
+                            <span class="font-medium text-slate text-[11px] sm:text-xs">貨到付款</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 動態切換的付款資訊輸入區 -->
+                <div id="payment-dynamic-fields" class="bg-ice-50 p-4 rounded-2xl border border-ice-200 animate-fade-in">
+                    <div id="pay-fields-credit" class="space-y-3">
+                        <div class="text-[11px] font-bold text-navy-deep flex items-center gap-1">
+                            <i class="fa-regular fa-credit-card"></i> 請輸入信用卡交易資訊
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate/80 mb-1">信用卡卡號 (16碼)</label>
+                            <input type="text" id="credit-card-num" placeholder="4567 •••• •••• 8888" maxlength="19" class="w-full border border-ice-200 rounded-xl p-2.5 bg-white text-xs focus:outline-none focus:border-dusty-blue font-mono">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] text-slate/80 mb-1">有效期限 (MM/YY)</label>
+                                <input type="text" id="credit-card-exp" placeholder="08/28" maxlength="5" class="w-full border border-ice-200 rounded-xl p-2.5 bg-white text-xs focus:outline-none focus:border-dusty-blue font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate/80 mb-1">CVC 安全碼 (3碼)</label>
+                                <input type="password" id="credit-card-cvc" placeholder="•••" maxlength="3" class="w-full border border-ice-200 rounded-xl p-2.5 bg-white text-xs focus:outline-none focus:border-dusty-blue font-mono">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="pay-fields-linepay" class="hidden space-y-2">
+                        <div class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                            <i class="fa-solid fa-qrcode"></i> LINE Pay 快速快捷驗證
+                        </div>
+                        <p class="text-[11px] text-slate/70">請輸入由 LINE 送出之 6 位數一次性交易驗證碼：</p>
+                        <input type="text" id="linepay-code" placeholder="請輸入 6 位數驗證碼" maxlength="6" class="w-full border border-ice-200 rounded-xl p-2.5 bg-white text-xs focus:outline-none focus:border-dusty-blue font-mono tracking-widest text-center">
+                    </div>
+
+                    <div id="pay-fields-cod" class="hidden space-y-1">
+                        <div class="text-[11px] font-bold text-slate flex items-center gap-1">
+                            <i class="fa-solid fa-truck-ramp-box"></i> 超商 / 宅配貨到付款
+                        </div>
+                        <p class="text-[11px] text-slate/70">無須預先線上支付。請於包裹送達門市或宅配送達時準備現金交付。</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">收件人姓名 *</label>
+                    <input type="text" id="co-name" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="例如：張恩采">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">聯絡電話 *</label>
+                    <input type="tel" id="co-phone" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="0912-345-678">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">收件地址 / 超商門市 *</label>
+                    <input type="text" id="co-address" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="7-11 或全家門市名稱 / 宅配地址">
+                </div>
+
+                <button type="submit" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3.5 rounded-full transition shadow-md mt-4">
+                    確認送出訂單
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: 新增飾品 Modal -->
+    <div id="add-product-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-ice-200 relative">
+            <button onclick="closeAddProductModal()" class="absolute top-5 right-5 text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition">✕</button>
+            <h3 class="text-xl font-serif font-bold text-navy-deep mb-5">新增上架飾品</h3>
+
+            <form onsubmit="handleAddProductSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">飾品名稱 *</label>
+                    <input type="text" id="new-prod-title" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="例如：極光冰藍水滴耳環">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">分類 *</label>
+                    <select id="new-prod-cat" class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition">
+                        <option value="耳環">耳環</option>
+                        <option value="項鍊">項鍊</option>
+                        <option value="髮飾">髮飾</option>
+                        <option value="手鍊">手鍊</option>
+                        <option value="手環">手環</option>
+                        <option value="戒指">戒指</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate mb-1.5">售價 ($) *</label>
+                        <input type="number" id="new-prod-price" required min="1" value="680" class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate mb-1.5">庫存 *</label>
+                        <input type="number" id="new-prod-stock" required min="1" value="20" class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate mb-1.5">圖片網址 (URL) *</label>
+                    <input type="url" id="new-prod-image" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="https://tse...">
+                </div>
+                <button type="submit" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3.5 rounded-full transition shadow-md mt-4">
+                    確認新增上架
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 7: 會員歷史訂單 Modal -->
+    <div id="my-orders-modal" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-8 border border-ice-200 relative max-h-[85vh] overflow-y-auto">
+            <button onclick="closeMyOrdersModal()" class="absolute top-5 right-5 text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition font-bold">✕</button>
+            <h3 class="text-xl font-serif font-bold text-navy-deep mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-dusty-blue"></i> 我的歷史訂單與履約狀態
+            </h3>
+            <p class="text-xs text-slate/60 mb-6">即時追蹤您的訂單處理進度</p>
+
+            <div id="my-orders-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 8: 顧客服務與購物說明 -->
+    <div id="info-modal" role="dialog" aria-modal="true" aria-labelledby="info-modal-title" class="fixed inset-0 bg-navy-deep/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" onclick="closeInfoModal()">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-ice-200 relative max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <button onclick="closeInfoModal()" aria-label="關閉說明視窗" class="absolute top-5 right-5 text-slate/50 hover:text-slate w-7 h-7 rounded-full bg-ice-50 flex items-center justify-center transition font-bold">✕</button>
+            <h3 id="info-modal-title" class="text-xl font-serif font-bold text-navy-deep mb-5 pr-8"></h3>
+            <div id="info-modal-content" class="space-y-4 text-sm text-slate/80 leading-7"></div>
+        </div>
+    </div>
+
+    <!-- 頁尾 (Rich Footer - RWD) -->
+    <footer class="bg-white border-t border-ice-200 text-slate/80 text-xs mt-12 sm:mt-16 w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8">
+            <div class="lg:col-span-2 space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="font-serif text-xl font-bold text-navy-deep">Azure Journal</span>
+                    <span class="text-[10px] tracking-widest text-ice-600 uppercase bg-ice-100 px-2 py-0.5 rounded-full">韓系冰藍</span>
+                </div>
+                <p class="text-slate/70 leading-relaxed max-w-sm">
+                    Azure Journal 致力於結合韓系極簡靈魂與冰藍莫蘭迪色調，精選天然海藍寶、月光石與 S925 銀飾，為您打造沉靜、清亮且極具質感的個人飾品日記。
+                </p>
+                <div class="flex gap-3 text-slate/60 pt-1">
+                    <a href="https://www.instagram.com/" class="hover:text-navy-deep transition"><i class="fa-brands fa-instagram text-base"></i></a>
+                    <a href="https://www.facebook.com/" class="hover:text-navy-deep transition"><i class="fa-brands fa-facebook text-base"></i></a>
+                    <a href="https://www.line.me/tw/" class="hover:text-navy-deep transition"><i class="fa-brands fa-line text-base"></i></a>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="font-serif font-bold text-navy-deep text-sm mb-3">顧客服務</h4>
+                <ul class="space-y-2 text-slate/70">
+                    <li><a href="#" onclick="openInfoModal('brand'); return false;" class="hover:text-dusty-blue transition">品牌簡介 & 理念</a></li>
+                    <li><a href="#" onclick="openInfoModal('care'); return false;" class="hover:text-dusty-blue transition">飾品材質與保養須知</a></li>
+                    <li><a href="#" onclick="openInfoModal('faq'); return false;" class="hover:text-dusty-blue transition">常見問題 FAQ</a></li>
+                    <li><a href="#" onclick="openInfoModal('cloth'); return false;" class="hover:text-dusty-blue transition">銀飾拭銀布使用指南</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="font-serif font-bold text-navy-deep text-sm mb-3">購物與運送</h4>
+                <ul class="space-y-2 text-slate/70">
+                    <li><a href="#" onclick="openInfoModal('shipping'); return false;" class="hover:text-dusty-blue transition">滿 $499 免運優惠</a></li>
+                    <li><a href="#" onclick="openInfoModal('pickup'); return false;" class="hover:text-dusty-blue transition">7-11 / 全家 取貨付款</a></li>
+                    <li><a href="#" onclick="openInfoModal('returns'); return false;" class="hover:text-dusty-blue transition">退換貨流程條款</a></li>
+                    <li><a href="#" onclick="openInfoModal('overseas'); return false;" class="hover:text-dusty-blue transition">海外配送說明</a></li>
+                </ul>
+            </div>
+
+           
+        </div>
+
+        <div class="border-t border-ice-100 py-6 text-center text-slate/50 text-[11px]">
+            &copy; 2026 Azure Journal. Blue Aesthetic E-Commerce System with ABC Inventory Control. All Rights Reserved.
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // 預設飾品資料 (包含使用者指定的 12 款新品 + 經典款)
+        const DEFAULT_PRODUCTS = [
+            // --- 耳環類 (4款指定商品) ---
+            {
+                id: "EAR-01",
+                title: "冰藍水滴垂墜耳環 (Ice Blue Drop Earrings)",
+                category: "耳環",
+                price: 680,
+                originalPrice: 980,
+                sales: 245,
+                stock: 25,
+                rating: 4.9,
+                image: "https://tse4.mm.bing.net/th/id/OIP.OSrTJ-NO8x4DkAq5mC_JGAHaHa?r=0&pid=Api&h=220&P=0",
+                material: "通透冰藍結晶 + S925低敏銀針",
+                badge: "新品推薦",
+                isOnline: true
+            },
+            {
+                id: "EAR-02",
+                title: "湛藍海寶石花瓣耳針 (Ocean Gem Petal Studs)",
+                category: "耳環",
+                price: 720,
+                originalPrice: 1050,
+                sales: 310,
+                stock: 18,
+                rating: 5.0,
+                image: "https://tse2.mm.bing.net/th/id/OIP.W80uzCYuamqi151yTTeGOgHaHa?r=0&pid=Api&h=220&P=0",
+                material: "天然海藍寶 + S925鍍白金",
+                badge: "熱銷經典",
+                isOnline: true
+            },
+            {
+                id: "EAR-03",
+                title: "月光石星芒流蘇耳夾 (Moonstone Tassel Clips)",
+                category: "耳環",
+                price: 780,
+                originalPrice: 1120,
+                sales: 185,
+                stock: 14,
+                rating: 4.8,
+                image: "https://tse1.mm.bing.net/th/id/OIP.uyqdpYMu7uN6U7X-q7BBTgHaHa?r=0&pid=Api&h=220&P=0",
+                material: "高質感月光石 + 無痛軟骨耳夾",
+                badge: "無耳洞必備",
+                isOnline: true
+            },
+            {
+                id: "EAR-04",
+                title: "莫蘭迪藍幾何圓環耳圈 (Morandi Blue Hoop Earrings)",
+                category: "耳環",
+                price: 590,
+                originalPrice: 850,
+                sales: 160,
+                stock: 30,
+                rating: 4.7,
+                image: "https://tse4.mm.bing.net/th/id/OIP.gxQWG2OkaH2MH7Udr15OSAHaHa?r=0&pid=Api&h=220&P=0",
+                material: "莫蘭迪藍烤漆 + 鈦鋼抗過敏",
+                badge: "極簡時尚",
+                isOnline: true
+            },
+            {
+                id: "EAR-05",
+                title: "皇后之默耳環 (Queen Slient Earrings)",
+                category: "耳環",
+                price: 790,
+                originalPrice: 1050,
+                sales: 120,
+                stock: 30,
+                rating: 4.6,
+                image: "https://tse4.mm.bing.net/th/id/OIP.bPA_WW7FjYpRXTHnvtN9cAHaHa?r=0&pid=Api&h=220&P=0",
+                material: "南非碎鑽 + 鉑金閃亮光澤",
+                badge: "低調奢華",
+                isOnline: true
+            },
+
+            // --- 項鍊類 (3款指定商品) ---
+            {
+                id: "NECK-01",
+                title: "冰晶藍寶石法式鎖骨鍊 (Sapphire Choker)",
+                category: "項鍊",
+                price: 980,
+                originalPrice: 1380,
+                sales: 340,
+                stock: 12,
+                rating: 4.9,
+                image: "https://tse4.mm.bing.net/th/id/OIP.dl1Uzn2hbLXH_cHY3_UHVgHaHa?r=0&pid=Api&h=220&P=0",
+                material: "天然藍寶石 + S925鍍18K白金",
+                badge: "鎮店之寶",
+                isOnline: true
+            },
+            {
+                id: "NECK-02",
+                title: "深海微光雙層天青石項鍊 (Double Layer Celestine)",
+                category: "項鍊",
+                price: 1150,
+                originalPrice: 1580,
+                sales: 215,
+                stock: 10,
+                rating: 4.9,
+                image: "https://tse3.mm.bing.net/th/id/OIP.psiKMFDcvytF8_pvtHB0pQHaHa?r=0&pid=Api&h=220&P=0",
+                material: "天然天青石 + 細緻多層層次鏈",
+                badge: "質感雙層",
+                isOnline: true
+            },
+            {
+                id: "NECK-03",
+                title: "霧藍琉璃水滴氣質頸鍊 (Mist Blue Glass Pendant)",
+                category: "項鍊",
+                price: 850,
+                originalPrice: 1200,
+                sales: 175,
+                stock: 22,
+                rating: 4.8,
+                image: "https://tse2.mm.bing.net/th/id/OIP.hTf5xdqY7B_3k_z8_0uu-AHaHa?r=0&pid=Api&h=220&P=0",
+                material: "手作霧藍琉璃 + 鍍白金微鑲",
+                badge: "優雅微光",
+                isOnline: true
+            },
+            {
+                id: "NECK-04",
+                title: "18K黃金四葉花藍色項鍊 (18K Gold Four Leaves Flower)",
+                category: "項鍊",
+                price: 750,
+                originalPrice: 1300,
+                sales: 155,
+                stock: 24,
+                rating: 4.9,
+                image: "https://tse2.mm.bing.net/th/id/OIP.5DAXleh8TnF9dnF0R3K-EAHaHa?r=0&pid=Api&h=220&P=0",
+                material: "普魯士藍瑪瑙 + S925銀微鑲",
+                badge: "熠熠生輝",
+                isOnline: true
+            },
+            {
+                id: "NECK-05",
+                title: "優雅宮廷風藍寶項鍊 (Elegant Sapphire)",
+                category: "項鍊",
+                price: 1900,
+                originalPrice: 3000,
+                sales: 155,
+                stock: 24,
+                rating: 4.9,
+                image: "https://tse4.mm.bing.net/th/id/OIP.RMawGFMgaYrZOtuouHqYPAHaHa?r=0&pid=Api&h=220&P=0",
+                material: "克萊茵藍寶石 + 4克拉白鑽",
+                badge: "璀璨奪目",
+                isOnline: true
+            },
+
+
+            // --- 髮飾類 (5款指定商品) ---
+            {
+                id: "HAIR-01",
+                title: "韓系莫蘭迪藍大理石紋抓夾 (Marble Hair Claw)",
+                category: "髮飾",
+                price: 360,
+                originalPrice: 520,
+                sales: 290,
+                stock: 40,
+                rating: 4.8,
+                image: "https://tse3.mm.bing.net/th/id/OIP.W5XHVoBiif6wgXyjffWtlQHaHa?r=0&pid=Api&h=220&P=0",
+                material: "高彈力鋼彈簧 + 大理石紋板材",
+                badge: "氣質百搭",
+                isOnline: true
+            },
+            {
+                id: "HAIR-02",
+                title: "冰藍絲絨法式蝴蝶結髮箍 (Velvet Bow Headband)",
+                category: "髮飾",
+                price: 450,
+                originalPrice: 650,
+                sales: 195,
+                stock: 28,
+                rating: 4.9,
+                image: "https://tse4.mm.bing.net/th/id/OIP.l2hRkStR15NqNU-2MrUOnwHaHa?r=0&pid=Api&h=220&P=0",
+                material: "奢華冰藍絲絨 + 舒適防滑內襯",
+                badge: "法式復古",
+                isOnline: true
+            },
+            {
+                id: "HAIR-03",
+                title: "莫蘭迪藍綢緞浪漫髮圈 (Morandi Satin Scrunchie)",
+                category: "髮飾",
+                price: 280,
+                originalPrice: 420,
+                sales: 380,
+                stock: 50,
+                rating: 4.7,
+                image: "https://tse3.mm.bing.net/th/id/OIP.UMSpf3uAkeb4-XnDSAlLhAHaHa?r=0&pid=Api&h=220&P=0",
+                material: "真絲光澤綢緞 + 高彈拉力繩",
+                badge: "溫柔隨性",
+                isOnline: true
+            },
+            {
+                id: "HAIR-04",
+                title: "海藍寶石珍珠髮夾套組 (Aquamarine Pearl Pins)",
+                category: "髮飾",
+                price: 480,
+                originalPrice: 680,
+                sales: 160,
+                stock: 20,
+                rating: 4.9,
+                image: "https://tse1.mm.bing.net/th/id/OIP.-RekXNcLsPW0unczG_tkTQHaHa?r=0&pid=Api&h=220&P=0",
+                material: "天然淡水珍珠 + 莫蘭迪藍鋯石",
+                badge: "套組優惠",
+                isOnline: true
+            },
+            {
+                id: "HAIR-05",
+                title: "湛藍晶簇氣質邊夾組 (Blue Crystal Side Clips)",
+                category: "髮飾",
+                price: 390,
+                originalPrice: 580,
+                sales: 140,
+                stock: 25,
+                rating: 4.8,
+                image: "https://tse2.mm.bing.net/th/id/OIP.a3nCciTvDVZ6ifW3TFEeNQHaHa?r=0&pid=Api&h=220&P=0",
+                material: "水晶簇鑲嵌 + 鍍金保色合金",
+                badge: "精緻細節",
+                isOnline: true
+            },
+            
+  {
+    id: "RING-01",
+    title: "旭海微光純銀海藍寶戒指",
+    category: "戒指",
+    price: 1400,
+    originalPrice: 1800,
+    sales: 150,
+    stock: 12,
+    rating: 4.9,
+    image: "https://tse3.mm.bing.net/th/id/OIP.NvlalYF6t4g4BKdYnW1bSQHaJ4?r=0&pid=Api&h=220&P=0",
+    material: "天然海藍寶石 + S925純銀鍍白金",
+    badge: "經典氣質",
+    isOnline: true
+  },
+  {
+    id: "RING-02",
+    title: "月光石月相星芒 S925 戒指",
+    category: "戒指",
+    price: 1280,
+    originalPrice: 1600,
+    sales: 98,
+    stock: 8,
+    rating: 4.8,
+    image: "https://tse1.mm.bing.net/th/id/OIP.iIzI6m75hAeL4kvWsuHRGQHaHa?r=0&pid=Api&h=220&P=0",
+    material: "天然藍月光石 + S925純銀微鑲鋯石",
+    badge: "法式復古",
+    isOnline: true
+  },
+  {
+    id: "RING-03",
+    title: "冰藍方鑽疊戴細戒組",
+    category: "戒指",
+    price: 890,
+    originalPrice: 1200,
+    sales: 210,
+    stock: 20,
+    rating: 4.7,
+    image: "https://tse2.mm.bing.net/th/id/OIP.-n39Kk2FiAeIpg8-0-aR_AHaHa?r=0&pid=Api&h=220&P=0",
+    material: "冰藍切割鋯石 + 銅鍍18K白金",
+    badge: "百搭疊戴",
+    isOnline: true
+  },
+    {
+        id: "RING-04",
+        title: "冰藍星芒海藍寶戒指",
+        category: "戒指",
+        price: 1080,
+        originalPrice: 1450,
+        sales: 86,
+        stock: 16,
+        rating: 4.9,
+        image: "https://tse2.mm.bing.net/th/id/OIP.H22pfVTkZF1E5Ws01sIMvQHaHa?r=0&pid=Api&h=220&P=0",
+        material: "天然海藍寶 + S925純銀星芒鑲嵌",
+        badge: "星芒新款",
+        isOnline: true
+    },
+    {
+        id: "RING-05",
+        title: "天藍水滴黃銅麻花鍊戒指",
+        category: "戒指",
+        price: 1380,
+        originalPrice: 1950,
+        sales: 76,
+        stock: 18,
+        rating: 4.9,
+        image: "https://tse2.mm.bing.net/th/id/OIP.e7EGZPFqudNH5AeSLCCo_AHaHa?r=0&pid=Api&h=220&P=0",
+        material: "水滴晶 + 匠人金工",
+        badge: "潮流指標",
+        isOnline: true
+    },
+
+
+  // ================= 手鍊 / 手環系列 (Bracelets) =================
+  {
+    id: "BRAC-01",
+    title: "澄澈海洋海藍寶手鍊",
+    category: "手鍊",
+    price: 1199,
+    originalPrice: 1580,
+    sales: 180,
+    stock: 15,
+    rating: 4.9,
+    image: "https://tse3.mm.bing.net/th/id/OIP.NZ0u5hPEch1R13HiYjjlxwHaHa?r=0&pid=Api&h=220&P=0",
+    material: "天然馬達加斯加海藍寶 + S925純銀配件",
+    badge: "澄澈海洋",
+    isOnline: true
+  },
+  {
+    id: "BRAC-02",
+    title: "月海之光海藍寶月光石手鍊",
+    category: "手鍊",
+    price: 1299,
+    originalPrice: 1680,
+    sales: 135,
+    stock: 10,
+    rating: 5.0,
+    image: "https://tse3.mm.bing.net/th/id/OIP.5kaJ6KduHvHv52fJWGrIpwHaHa?r=0&pid=Api&h=220&P=0",
+    material: "天然藍月光石 + 莫蘭迪藍水晶",
+    badge: "人氣推廣",
+    isOnline: true
+  },
+  {
+    id: "BRAC-03",
+    title: "冰晶藍水滴銀鏈雙層手鏈",
+    category: "手鍊",
+    price: 1050,
+    originalPrice: 1400,
+    sales: 90,
+    stock: 18,
+    rating: 4.8,
+    image: "https://tse1.mm.bing.net/th/id/OIP.OUkzD0EjvwZRKnJxqIcWyAHaHa?r=0&pid=Api&h=220&P=0",
+    material: "奧地利冰藍琉璃水滴 + S925純銀雙層鍊",
+    badge: "雙層設計",
+    isOnline: true
+    },
+    {
+        id: "BRAC-04",
+        title: "青金石開口式純銀手環",
+        category: "手環",
+        price: 1380,
+        originalPrice: 1780,
+        sales: 72,
+        stock: 14,
+        rating: 4.9,
+        image: "https://tse2.mm.bing.net/th/id/OIP.9SOGCOsAQBGdR8wOJiukcgHaHa?r=0&pid=Api&h=220&P=0",
+        material: "天然青金石 + 鉑金開口手環",
+        badge: "低調清奢",
+        isOnline: true
+  },
+  {
+        id: "BRAC-05",
+        title: "童話海藍寶藍水晶手鍊",
+        category: "手環",
+        price: 1380,
+        originalPrice: 1780,
+        sales: 72,
+        stock: 14,
+        rating: 4.9,
+        image: "https://tse3.mm.bing.net/th/id/OIP.Z-UM6zUv357cm56BCxadAwHaHa?r=0&pid=Api&h=220&P=0",
+        material: "天然藍水晶 + 18K金鍍層",
+        badge: "手環新品",
+        isOnline: true
+  }
+
+        ];
+
+        // 合併預設商品，讓既有瀏覽器資料也能取得新增品項。
+        const savedProducts = JSON.parse(localStorage.getItem('azure_v4_products'));
+        const mergedProducts = Array.isArray(savedProducts)
+            ? [...savedProducts, ...DEFAULT_PRODUCTS.filter(defaultProduct => !savedProducts.some(savedProduct => savedProduct.id === defaultProduct.id))]
+            : DEFAULT_PRODUCTS;
+
+        // 全域狀態
+        let state = {
+            products: mergedProducts,
+            orders: JSON.parse(localStorage.getItem('azure_v4_orders')) || [],
+            registeredUsers: JSON.parse(localStorage.getItem('azure_v4_users')) || [],
+            currentUser: JSON.parse(localStorage.getItem('azure_v4_current_user')) || null,
+            cart: JSON.parse(localStorage.getItem('azure_v4_cart')) || [],
+            isAdminLoggedIn: false,
+            searchQuery: "",
+            currentCategory: "all",
+            adminProductQuery: "",
+            adminProductCategory: "all",
+            selectedProductId: null,
+            isRegisterMode: false,
+            isTopSalesExpanded: true
+        };
+
+        // 持久化保存
+        function persistData() {
+            localStorage.setItem('azure_v4_products', JSON.stringify(state.products));
+            localStorage.setItem('azure_v4_orders', JSON.stringify(state.orders));
+            localStorage.setItem('azure_v4_users', JSON.stringify(state.registeredUsers));
+            localStorage.setItem('azure_v4_current_user', JSON.stringify(state.currentUser));
+            localStorage.setItem('azure_v4_cart', JSON.stringify(state.cart));
+        }
+
+        if (!Array.isArray(savedProducts) || mergedProducts.length !== savedProducts.length) {
+            localStorage.setItem('azure_v4_products', JSON.stringify(state.products));
+        }
+
+        // 重置為預設
+        function resetDataDemo() {
+            if (confirm("確定要將飾品清單重置為預設包含 12 款新品的資料庫嗎？")) {
+                state.products = [...DEFAULT_PRODUCTS];
+                state.cart = [];
+                state.orders = [];
+                persistData();
+                renderStore();
+                updateCartUI();
+                renderAdmin();
+                showToast("模擬資料已成功重置！");
+            }
+        }
+
+        // 折疊/展開熱銷排行榜
+        function toggleTopSalesSection() {
+            state.isTopSalesExpanded = !state.isTopSalesExpanded;
+            const content = document.getElementById('top-sales-content');
+            const icon = document.getElementById('toggle-top-sales-icon');
+
+            if (state.isTopSalesExpanded) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        // 切換付款方式
+        function handlePaymentMethodChange(method) {
+            const creditGroup = document.getElementById('pay-fields-credit');
+            const linepayGroup = document.getElementById('pay-fields-linepay');
+            const codGroup = document.getElementById('pay-fields-cod');
+
+            creditGroup.classList.add('hidden');
+            linepayGroup.classList.add('hidden');
+            codGroup.classList.add('hidden');
+
+            if (method === '信用卡線上支付') {
+                creditGroup.classList.remove('hidden');
+            } else if (method === 'LINE Pay') {
+                linepayGroup.classList.remove('hidden');
+            } else if (method === '超商取貨付款') {
+                codGroup.classList.remove('hidden');
+            }
+        }
+
+        let topSalesChartInstance = null;
+        let abcPieChartInstance = null;
+
+        // 視圖切換
+        function switchView(viewName) {
+            const storeView = document.getElementById('view-store');
+            const adminView = document.getElementById('view-admin');
+            const btnStore = document.getElementById('nav-btn-store');
+            const btnAdmin = document.getElementById('nav-btn-admin');
+
+            if (viewName === 'admin' && !state.isAdminLoggedIn) {
+                openAdminLoginModal();
+                return;
+            }
+
+            if (viewName === 'store') {
+                storeView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                btnStore.className = "px-2.5 sm:px-3 py-1 rounded-full font-medium transition bg-dusty-blue text-white shadow-sm";
+                btnAdmin.className = "px-2.5 sm:px-3 py-1 rounded-full font-medium transition text-slate hover:text-navy-deep";
+                renderStore();
+            } else {
+                storeView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                btnAdmin.className = "px-2.5 sm:px-3 py-1 rounded-full font-medium transition bg-dusty-blue text-white shadow-sm";
+                btnStore.className = "px-2.5 sm:px-3 py-1 rounded-full font-medium transition text-slate hover:text-navy-deep";
+                renderAdmin();
+            }
+        }
+
+        // 分類過濾
+        function filterCategory(cat) {
+            state.currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = "cat-btn shrink-0 hover:text-navy-deep transition font-medium text-navy-deep border-b-2 border-dusty-blue pb-0.5";
+                } else {
+                    btn.className = "cat-btn shrink-0 hover:text-navy-deep transition font-medium text-slate/70 border-b-2 border-transparent pb-0.5";
+                }
+            });
+
+            const titles = {
+                'all': '全部湛藍飾品',
+                '耳環': '耳環 / 耳夾系列',
+                '項鍊': '項鍊 / 鎖骨鍊系列',
+                '髮飾': '髮飾 / 配件系列',
+                '戒指': '戒指 / 情侶戒系列',
+                '手鍊': '手鍊 / 手環系列'
+            };
+            document.getElementById('category-title').textContent = titles[cat] || '飾品專區';
+            renderStore();
+        }
+
+        // 搜尋
+        function handleSearch(e) {
+            state.searchQuery = e.target.value.trim();
+            renderStore();
+        }
+
+        // ABC 分析計算邏輯
+        function calculateABCClassification() {
+            const sorted = [...state.products].map(p => ({
+                ...p,
+                totalValue: p.price * p.stock
+            })).sort((a, b) => b.totalValue - a.totalValue);
+
+            const grandTotalValue = sorted.reduce((sum, item) => sum + item.totalValue, 0);
+
+            let cumulativeValue = 0;
+            const abcMap = {};
+
+            sorted.forEach(p => {
+                cumulativeValue += p.totalValue;
+                const ratio = grandTotalValue > 0 ? (cumulativeValue / grandTotalValue) : 0;
+
+                let category = 'C';
+                if (ratio <= 0.70) {
+                    category = 'A';
+                } else if (ratio <= 0.90) {
+                    category = 'B';
+                } else {
+                    category = 'C';
+                }
+
+                abcMap[p.id] = {
+                    category: category,
+                    totalValue: p.totalValue
+                };
+            });
+
+            return { abcMap, grandTotalValue };
+        }
+
+        // 渲染前台商品網格
+       // 修正後的前台商品篩選渲染邏輯
+function renderStore() {
+    const grid = document.getElementById('products-grid');
+    const filtered = state.products.filter(p => {
+        // 採用 includes 模糊比對，避免 "戒指" 與 "戒指 / 情侶戒" 比對失敗
+        const matchesCat = (state.currentCategory === 'all') || 
+                           p.category.includes(state.currentCategory) || 
+                           state.currentCategory.includes(p.category) ||
+                           (state.currentCategory === '手鍊' && p.category === '手環');
+                           
+        const matchesSearch = p.title.toLowerCase().includes(state.searchQuery.toLowerCase()) || 
+                              p.material.toLowerCase().includes(state.searchQuery.toLowerCase());
+        return p.isOnline && matchesCat && matchesSearch;
+    });
+
+    document.getElementById('product-count-label').textContent = `共 ${filtered.length} 款`;
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate/50 bg-white rounded-3xl border border-ice-200">未找到符合條件的湛藍飾品</div>`;
+    } else {
+        grid.innerHTML = filtered.map(p => `
+            <div class="product-card bg-white rounded-3xl border border-ice-200 overflow-hidden shadow-sm flex flex-col justify-between p-3.5 sm:p-4 group">
+                <div>
+                    <div class="relative overflow-hidden rounded-2xl mb-3 cursor-pointer bg-ice-50" onclick="openProductModal('${p.id}')">
+                        <img src="${p.image}" alt="${p.title}" onerror="this.src='https://placehold.co/400x400/E2ECF4/102A45?text=Azure+Journal'" class="w-full h-48 sm:h-52 object-cover group-hover:scale-105 transition duration-500">
+                        <span class="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur text-navy-deep text-[10px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full shadow-sm border border-ice-200">${p.badge || '精選'}</span>
+                    </div>
+                    <h4 class="font-serif font-bold text-slate text-xs sm:text-sm mt-1 mb-1 line-clamp-1 hover:text-navy-deep cursor-pointer" onclick="openProductModal('${p.id}')">${p.title}</h4>
+                    <p class="text-[11px] text-slate/60 mb-2 truncate font-light">${p.material}</p>
+                </div>
+                <div class="flex items-center justify-between mt-2 pt-3 border-t border-ice-100">
+                    <div>
+                        <span class="text-navy-deep font-serif font-bold text-base sm:text-lg">$${p.price}</span>
+                        <span class="text-slate/40 text-xs line-through ml-1">$${p.originalPrice}</span>
+                    </div>
+                    <button onclick="addToCart('${p.id}')" class="bg-ice-100 hover:bg-navy-deep hover:text-white text-navy-deep w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition shadow-sm" title="加入選購清單">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderTopSalesRanking();
+}
+
+        // 渲染 TOP 5 熱銷榜與 Chart.js
+        function renderTopSalesRanking() {
+            const sortedBySales = [...state.products].sort((a, b) => b.sales - a.sales).slice(0, 5);
+            const listContainer = document.getElementById('top-sales-list');
+
+            const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+            listContainer.innerHTML = sortedBySales.map((p, idx) => `
+                <div class="flex items-center justify-between bg-ice-50/70 hover:bg-ice-100/80 p-2.5 sm:p-3 rounded-2xl border border-ice-200 transition">
+                    <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <span class="text-base sm:text-lg font-bold shrink-0">${medals[idx]}</span>
+                        <img src="${p.image}" onerror="this.src='https://placehold.co/100x100/E2ECF4/102A45?text=Azure'" class="w-9 h-9 sm:w-10 sm:h-10 object-cover rounded-xl shadow-sm shrink-0">
+                        <div class="min-w-0">
+                            <div class="font-bold text-slate text-xs truncate">${p.title}</div>
+                            <div class="text-[10px] sm:text-[11px] text-slate/60">$${p.price} ｜ 銷量 ${p.sales} 件</div>
+                        </div>
+                    </div>
+                    <button onclick="addToCart('${p.id}')" class="text-[11px] bg-white text-navy-deep hover:bg-navy-deep hover:text-white border border-ice-200 px-2.5 sm:px-3 py-1 rounded-full transition font-medium shrink-0 ml-2">
+                        搶購
+                    </button>
+                </div>
+            `).join('');
+
+            const ctx = document.getElementById('topSalesChart').getContext('2d');
+            if (topSalesChartInstance) topSalesChartInstance.destroy();
+
+            topSalesChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedBySales.map(p => p.title.substring(0, 6) + '...'),
+                    datasets: [{
+                        label: '銷售件數',
+                        data: sortedBySales.map(p => p.sales),
+                        backgroundColor: '#5B86A6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#E2ECF4' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // 購物車邏輯
+        function addToCart(id, qty = 1) {
+            const product = state.products.find(p => p.id === id);
+            if (!product || product.stock <= 0) {
+                showToast("商品現貨庫存不足", "error");
+                return;
+            }
+
+            const item = state.cart.find(c => c.id === id);
+            if (item) {
+                if (item.qty + qty > product.stock) {
+                    showToast(`已達最大庫存上限 (${product.stock}件)`, "error");
+                    return;
+                }
+                item.qty += qty;
+            } else {
+                state.cart.push({ id: product.id, title: product.title, price: product.price, image: product.image, qty: qty });
+            }
+
+            persistData();
+            updateCartUI();
+            showToast(`已新增至選購清單`);
+        }
+
+        function updateCartQty(id, newQty) {
+            const product = state.products.find(p => p.id === id);
+            const cartItem = state.cart.find(c => c.id === id);
+            if (!cartItem) return;
+
+            let parsed = parseInt(newQty);
+            if (isNaN(parsed) || parsed <= 0) {
+                removeFromCart(id);
+                return;
+            }
+
+            if (product && parsed > product.stock) {
+                showToast(`超過現有庫存 (最高 ${product.stock} 件)`, "error");
+                cartItem.qty = product.stock;
+            } else {
+                cartItem.qty = parsed;
+            }
+
+            persistData();
+            updateCartUI();
+        }
+
+        function changeCartQty(id, delta) {
+            const cartItem = state.cart.find(c => c.id === id);
+            if (cartItem) {
+                updateCartQty(id, cartItem.qty + delta);
+            }
+        }
+
+        function removeFromCart(id) {
+            state.cart = state.cart.filter(i => i.id !== id);
+            persistData();
+            updateCartUI();
+            showToast("已從清單移除品項");
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items-container');
+            const badge = document.getElementById('cart-badge');
+            const badgeMobile = document.getElementById('cart-badge-mobile');
+            const totalQty = state.cart.reduce((sum, i) => sum + i.qty, 0);
+            
+            if (badge) badge.textContent = totalQty;
+            if (badgeMobile) badgeMobile.textContent = totalQty;
+
+            const subtotal = state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const discount = subtotal >= 1000 ? 100 : 0;
+            const shipping = subtotal >= 499 ? 0 : (subtotal > 0 ? 60 : 0);
+            const finalTotal = Math.max(0, subtotal - discount + shipping);
+
+            document.getElementById('cart-subtotal-display').textContent = `$${subtotal}`;
+            document.getElementById('cart-discount-display').textContent = `-$${discount}`;
+            document.getElementById('cart-shipping-display').textContent = shipping === 0 ? '免運 ($0)' : `$${shipping}`;
+            document.getElementById('cart-total-display').textContent = `$${finalTotal}`;
+
+            if (state.cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-16 text-slate/50">選購清單目前是空的</div>`;
+                return;
+            }
+
+            container.innerHTML = state.cart.map(i => `
+                <div class="flex items-center justify-between bg-ice-50/80 border border-ice-200 p-3 rounded-2xl text-xs gap-3">
+                    <img src="${i.image}" onerror="this.src='https://placehold.co/100x100/E2ECF4/102A45?text=Azure'" class="w-12 h-12 object-cover rounded-xl shadow-sm shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-slate truncate">${i.title}</div>
+                        <div class="text-navy-deep font-bold mt-1">$${i.price}</div>
+                    </div>
+                    <div class="flex items-center border border-ice-200 rounded-lg overflow-hidden bg-white shrink-0">
+                        <button onclick="changeCartQty('${i.id}', -1)" class="px-2 py-1 text-slate font-bold hover:bg-ice-100 transition">-</button>
+                        <input type="number" value="${i.qty}" min="1" onchange="updateCartQty('${i.id}', this.value)" class="w-8 text-center text-xs py-1 focus:outline-none font-bold">
+                        <button onclick="changeCartQty('${i.id}', 1)" class="px-2 py-1 text-slate font-bold hover:bg-ice-100 transition">+</button>
+                    </div>
+                    <button onclick="removeFromCart('${i.id}')" class="text-slate/40 hover:text-red-500 p-1.5 transition shrink-0"><i class="fa-regular fa-trash-can"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function toggleCartModal(show) {
+            document.getElementById('cart-modal').classList.toggle('hidden', !show);
+        }
+
+        const INFO_CONTENT = {
+            brand: {
+                title: '品牌簡介 & 理念',
+                content: `<p>Azure Journal 將韓系極簡設計與清透的冰藍色調融入日常飾品，挑選海藍寶、月光石與 S925 銀飾，陪伴你記錄每一段溫柔日常。</p><p>我們重視材質資訊與配戴感受，商品材質請以各商品頁的說明為準；天然石紋理與色澤略有差異，正是每件飾品獨有的樣子。</p>`
+            },
+            care: {
+                title: '飾品材質與保養須知',
+                content: `<p>商品可能使用天然寶石、S925 銀及其他配件，請先查看商品頁的個別材質標示。天然石的顏色、紋理與尺寸可能略有差異。</p><ul class="list-disc pl-5 space-y-1"><li>洗澡、游泳、運動或接觸清潔劑前，建議先取下飾品。</li><li>避免香水、化妝品與汗水長時間附著；配戴後以柔軟乾布擦拭。</li><li>不配戴時保持乾燥，並與其他飾品分開收納，減少刮傷與氧化。</li></ul>`
+            },
+            faq: {
+                title: '常見問題 FAQ',
+                content: `<div><h4 class="font-bold text-navy-deep">商品材質要去哪裡看？</h4><p>請開啟商品卡片查看材質說明；天然材質的外觀可能略有差異。</p></div><div><h4 class="font-bold text-navy-deep">如何確認訂單與商品狀態？</h4><p>登入會員後可從「我的歷史訂單」查看本站保存的訂單資訊。若資料或商品規格需要協助，請透過頁尾社群帳號聯絡。</p></div><div><h4 class="font-bold text-navy-deep">照片顏色和實品不同嗎？</h4><p>螢幕設定與拍攝光線可能造成些微色差，商品描述及材質標示請一併參考。</p></div>`
+            },
+            cloth: {
+                title: '銀飾拭銀布使用指南',
+                content: `<p>銀飾配戴後可用拭銀布輕柔擦拭表面，再將飾品收納於乾燥處。布面變黑是擦拭過程中的正常現象，請勿清洗拭銀布。</p><p>拭銀布主要用於銀飾表面；若商品含有天然石、珍珠、鍍層或特殊氧化設計，請避開該部位，以免磨損或影響外觀。清潔前請先查看商品頁的材質說明。</p>`
+            },
+            shipping: {
+                title: '滿 $499 免運優惠',
+                content: `<p>本站目前提供的超商配送，單筆購物金額滿 $499 即享免運。購物車與結帳頁會依訂單金額自動計算並顯示運費，請以結帳頁的最終金額為準。</p><p>此優惠適用的配送方式以結帳頁可選項目為準；若有其他折扣或特殊配送需求，請先向客服確認。</p>`
+            },
+            pickup: {
+                title: '7-11 / 全家 取貨付款',
+                content: `<p>結帳時選擇「超商取貨付款」，並依頁面提示填寫收件人、聯絡電話與取件門市資料。商品送達門市後，請留意物流通知並於期限內取件、付款。</p><p>門市與配送選項以結帳頁實際提供的欄位為準；若尚未看到門市選擇欄位，請先聯絡客服確認，不要在備註欄填入付款資料。</p>`
+            },
+            returns: {
+                title: '退換貨流程條款',
+                content: `<ol class="list-decimal pl-5 space-y-2"><li>收到商品後如需辦理退貨，請於收貨次日起 7 日內聯絡客服，並提供訂單資訊與商品狀況照片。</li><li>請先等候客服確認寄回方式；商品、配件、贈品及包裝請保持完整。</li><li>網路購物猶豫期並非試用期；依法不適用解除權的商品，依相關法令規定辦理。</li></ol><p>實際退換貨資格與處理方式，將依消費者保護相關法令及商品狀況確認。</p>`
+            },
+            overseas: {
+                title: '海外配送說明',
+                content: `<p>目前網站結帳提供的配送方式以頁面所列超商配送為主，尚未提供海外地址的自助結帳流程。</p><p>海外寄送請先透過頁尾社群帳號詢問，確認可配送地區、運費、付款方式與可能產生的關稅或當地費用後再下單；未確認前請勿直接以海外地址送出訂單。</p>`
+            }
+        };
+
+        function openInfoModal(key) {
+            const info = INFO_CONTENT[key];
+            if (!info) return;
+            document.getElementById('info-modal-title').textContent = info.title;
+            document.getElementById('info-modal-content').innerHTML = info.content;
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+
+        function closeInfoModal() {
+            document.getElementById('info-modal').classList.add('hidden');
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeInfoModal();
+        });
+
+        // 商品詳情彈窗
+        function openProductModal(id) {
+            const p = state.products.find(x => x.id === id);
+            if (!p) return;
+            state.selectedProductId = id;
+
+            document.getElementById('modal-img').src = p.image;
+            document.getElementById('modal-title').textContent = p.title;
+            document.getElementById('modal-price').textContent = `$${p.price}`;
+            document.getElementById('modal-old-price').textContent = `$${p.originalPrice}`;
+            document.getElementById('modal-material').textContent = p.material;
+            document.getElementById('modal-rating-text').textContent = p.rating || "4.9";
+            document.getElementById('modal-sales').textContent = `已售出 ${p.sales} 件`;
+            document.getElementById('modal-category').textContent = p.category;
+            document.getElementById('modal-qty-input').value = 1;
+
+            let starsHtml = '';
+            for (let i = 0; i < 5; i++) starsHtml += '<i class="fa-solid fa-star"></i>';
+            document.getElementById('modal-rating-stars').innerHTML = starsHtml;
+
+            document.getElementById('product-detail-modal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-detail-modal').classList.add('hidden');
+        }
+
+        function changeModalQty(delta) {
+            const input = document.getElementById('modal-qty-input');
+            let val = parseInt(input.value) + delta;
+            if (val < 1) val = 1;
+            input.value = val;
+        }
+
+        function addModalItemToCart() {
+            const qty = parseInt(document.getElementById('modal-qty-input').value);
+            if (state.selectedProductId) {
+                addToCart(state.selectedProductId, qty);
+                closeProductModal();
+            }
+        }
+
+        // 會員機制
+        function openCustomerAuthModal() {
+            state.isRegisterMode = false;
+            updateAuthModalUI();
+            document.getElementById('customer-auth-modal').classList.remove('hidden');
+        }
+
+        function closeCustomerAuthModal() {
+            document.getElementById('customer-auth-modal').classList.add('hidden');
+        }
+
+        function toggleAuthMode() {
+            state.isRegisterMode = !state.isRegisterMode;
+            updateAuthModalUI();
+        }
+
+        function updateAuthModalUI() {
+            document.getElementById('auth-modal-title').textContent = state.isRegisterMode ? "註冊新會員" : "會員登入";
+            document.getElementById('auth-modal-desc').textContent = state.isRegisterMode ? "註冊帳號即可解鎖選購清單與結帳功能！" : "請登入以繼續完成結帳。";
+            document.getElementById('auth-submit-btn').textContent = state.isRegisterMode ? "立即註冊" : "登入";
+            document.getElementById('auth-switch-text').textContent = state.isRegisterMode ? "已經有帳號了？" : "還沒有帳號？";
+            document.getElementById('auth-switch-btn').textContent = state.isRegisterMode ? "去登入" : "去註冊";
+        }
+
+        function handleCustomerAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-password').value.trim();
+
+            if (state.isRegisterMode) {
+                if (state.registeredUsers.find(u => u.email === email)) {
+                    showToast("此信箱已註冊過！", "error");
+                    return;
+                }
+                const newUser = { email, pass };
+                state.registeredUsers.push(newUser);
+                state.currentUser = newUser;
+                persistData();
+                closeCustomerAuthModal();
+                updateUserUI();
+                showToast(`🎉 註冊成功！歡迎 ${email}`);
+            } else {
+                const user = state.registeredUsers.find(u => u.email === email && u.pass === pass);
+                if (user) {
+                    state.currentUser = user;
+                    persistData();
+                    closeCustomerAuthModal();
+                    updateUserUI();
+                    showToast(`歡迎回來，${email}`);
+                } else {
+                    showToast("帳號或密碼錯誤！", "error");
+                }
+            }
+        }
+
+        function handleCustomerLogout() {
+            state.currentUser = null;
+            persistData();
+            updateUserUI();
+            showToast("已登出會員帳號");
+        }
+
+        function updateUserUI() {
+            const authBtn = document.getElementById('auth-btn');
+            const statusDisplay = document.getElementById('user-status-display');
+            const currentUsername = document.getElementById('current-username');
+
+            if (state.currentUser) {
+                authBtn.classList.add('hidden');
+                statusDisplay.classList.remove('hidden');
+                currentUsername.textContent = state.currentUser.email;
+            } else {
+                authBtn.classList.remove('hidden');
+                statusDisplay.classList.add('hidden');
+            }
+        }
+
+        // 結帳 Modal
+        function openCheckoutModal() {
+            if (state.cart.length === 0) return;
+
+            if (!state.currentUser) {
+                toggleCartModal(false);
+                openCustomerAuthModal();
+                showToast("⚠️ 請先登入會員才能進行結帳！", "error");
+                return;
+            }
+
+            toggleCartModal(false);
+
+            const defaultRadio = document.querySelector('input[name="payment"][value="信用卡線上支付"]');
+            if (defaultRadio) {
+                defaultRadio.checked = true;
+                handlePaymentMethodChange('信用卡線上支付');
+            }
+
+            const subtotal = state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const discount = subtotal >= 1000 ? 100 : 0;
+            const shipping = subtotal >= 499 ? 0 : 60;
+            const finalTotal = Math.max(0, subtotal - discount + shipping);
+
+            const summaryContainer = document.getElementById('checkout-items-summary');
+            summaryContainer.innerHTML = state.cart.map(i => `
+                <div class="flex justify-between text-[11px]">
+                    <span class="truncate max-w-[200px] sm:max-w-[240px]">${i.title} (x${i.qty})</span>
+                    <span class="font-medium">$${i.price * i.qty}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('co-subtotal').textContent = `$${subtotal}`;
+            document.getElementById('co-discount').textContent = `-$${discount}`;
+            document.getElementById('co-shipping').textContent = shipping === 0 ? '免運 ($0)' : `$${shipping}`;
+            document.getElementById('co-total').textContent = `$${finalTotal}`;
+
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        function handleCheckoutSubmit(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('co-name').value;
+            const phone = document.getElementById('co-phone').value;
+            const address = document.getElementById('co-address').value;
+            const payment = document.querySelector('input[name="payment"]:checked').value;
+
+            if (payment === '信用卡線上支付') {
+                const cardNum = document.getElementById('credit-card-num').value.trim();
+                const cardExp = document.getElementById('credit-card-exp').value.trim();
+                const cardCvc = document.getElementById('credit-card-cvc').value.trim();
+                if (!cardNum || !cardExp || !cardCvc) {
+                    showToast("⚠️ 請完整填寫信用卡卡號、有效期限與 CVC！", "error");
+                    return;
+                }
+            } else if (payment === 'LINE Pay') {
+                const lineCode = document.getElementById('linepay-code').value.trim();
+                if (!lineCode || lineCode.length < 6) {
+                    showToast("⚠️ 請輸入完整的 6 位數 LINE Pay 驗證碼！", "error");
+                    return;
+                }
+            }
+
+            const subtotal = state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const discount = subtotal >= 1000 ? 100 : 0;
+            const shipping = subtotal >= 499 ? 0 : 60;
+            const finalTotal = Math.max(0, subtotal - discount + shipping);
+
+            state.cart.forEach(cartItem => {
+                const product = state.products.find(p => p.id === cartItem.id);
+                if (product) {
+                    product.stock = Math.max(0, product.stock - cartItem.qty);
+                    product.sales += cartItem.qty;
+                }
+            });
+
+            const newOrder = {
+                id: `ORD-${Date.now().toString().slice(-6)}`,
+                userEmail: state.currentUser.email,
+                customer: `${name} (${phone})`,
+                address: address,
+                itemsSummary: state.cart.map(c => `${c.title} x${c.qty}`).join(', '),
+                payment: payment,
+                shippingFee: shipping === 0 ? '免運 ($0)' : `$${shipping}`,
+                total: finalTotal,
+                status: "處理中",
+                date: new Date().toLocaleString()
+            };
+
+            state.orders.unshift(newOrder);
+            state.cart = [];
+            persistData();
+            updateCartUI();
+            closeCheckoutModal();
+            renderStore();
+
+            showToast(`🎉 訂單 ${newOrder.id} 結帳成功！付款方式：${payment}`);
+        }
+
+        // 會員歷史訂單 Modal
+        function openMyOrdersModal() {
+            if (!state.currentUser) {
+                openCustomerAuthModal();
+                showToast("請先登入會員以查看訂單紀錄");
+                return;
+            }
+
+            const container = document.getElementById('my-orders-list');
+            const userOrders = state.orders.filter(o => o.userEmail === state.currentUser.email);
+
+            if (userOrders.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate/50 text-xs">目前尚無任何歷史訂單紀錄</div>`;
+            } else {
+                container.innerHTML = userOrders.map(o => {
+                    let statusBadge = "bg-amber-100 text-amber-700";
+                    if (o.status === "已出貨") statusBadge = "bg-blue-100 text-blue-700";
+                    if (o.status === "已完成") statusBadge = "bg-emerald-100 text-emerald-700";
+
+                    return `
+                        <div class="bg-ice-50 p-4 rounded-2xl border border-ice-200 text-xs space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-mono font-bold text-navy-deep">${o.id}</span>
+                                <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px] ${statusBadge}">${o.status}</span>
+                            </div>
+                            <div class="text-slate/80">${o.itemsSummary}</div>
+                            <div class="flex justify-between text-slate/60 border-t border-ice-200 pt-2 text-[11px]">
+                                <span>${o.date} ｜ ${o.payment}</span>
+                                <span class="font-bold text-navy-deep text-xs">總額: $${o.total}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('my-orders-modal').classList.remove('hidden');
+        }
+
+        function closeMyOrdersModal() {
+            document.getElementById('my-orders-modal').classList.add('hidden');
+        }
+
+        // 商家後台
+        function openAdminLoginModal() {
+            if (state.isAdminLoggedIn) {
+                switchView('admin');
+            } else {
+                document.getElementById('admin-login-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.add('hidden');
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
+
+            if (user === 'admin' && pass === '123456') {
+                state.isAdminLoggedIn = true;
+                closeAdminLoginModal();
+                showToast("商家後台登入成功！");
+                switchView('admin');
+            } else {
+                showToast("管理者帳號或密碼錯誤！", "error");
+            }
+        }
+
+        function logoutAdmin() {
+            state.isAdminLoggedIn = false;
+            switchView('store');
+            showToast("已登出商家後台");
+        }
+
+        function renderAdmin() {
+
+            
+            const { abcMap, grandTotalValue } = calculateABCClassification();
+
+            const totalGMV = state.orders.reduce((sum, o) => sum + o.total, 0);
+            const aov = state.orders.length > 0 ? Math.round(totalGMV / state.orders.length) : 0;
+
+            document.getElementById('stat-gmv').textContent = `$${totalGMV.toLocaleString()}`;
+            document.getElementById('stat-orders-count').textContent = `${state.orders.length} 筆`;
+            document.getElementById('stat-aov').textContent = `$${aov.toLocaleString()}`;
+            document.getElementById('stat-total-stock-value').textContent = `$${grandTotalValue.toLocaleString()}`;
+
+            let countA = 0, valA = 0;
+            let countB = 0, valB = 0;
+            let countC = 0, valC = 0;
+
+            Object.values(abcMap).forEach(item => {
+                if (item.category === 'A') { countA++; valA += item.totalValue; }
+                if (item.category === 'B') { countB++; valB += item.totalValue; }
+                if (item.category === 'C') { countC++; valC += item.totalValue; }
+            });
+
+            document.getElementById('abc-a-stat').textContent = `${countA} 件 ($${valA.toLocaleString()})`;
+            document.getElementById('abc-b-stat').textContent = `${countB} 件 ($${valB.toLocaleString()})`;
+            document.getElementById('abc-c-stat').textContent = `${countC} 件 ($${valC.toLocaleString()})`;
+
+            const pieCtx = document.getElementById('abcPieChart').getContext('2d');
+            if (abcPieChartInstance) abcPieChartInstance.destroy();
+
+            abcPieChartInstance = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['A 類 (高價值70%)', 'B 類 (中價值20%)', 'C 類 (低價值10%)'],
+                    datasets: [{
+                        data: [valA, valB, valC],
+                        backgroundColor: ['#E11D48', '#F59E0B', '#64748B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+                }
+            });
+
+            const invTbody = document.getElementById('admin-inventory-tbody');
+            const adminQuery = state.adminProductQuery.trim().toLowerCase();
+            const adminProducts = state.products.filter(p => {
+                const matchesQuery = [p.id, p.title, p.category, p.material]
+                    .some(value => String(value || '').toLowerCase().includes(adminQuery));
+                const matchesCategory = state.adminProductCategory === 'all' || p.category === state.adminProductCategory;
+                return matchesQuery && matchesCategory;
+            });
+
+            invTbody.innerHTML = adminProducts.length ? adminProducts.map(p => {
+                const abcInfo = abcMap[p.id] || { category: 'C', totalValue: p.price * p.stock };
+                
+                let abcBadgeClass = "bg-slate-100 text-slate-700";
+                if (abcInfo.category === 'A') abcBadgeClass = "bg-rose-100 text-rose-700 font-bold border border-rose-200";
+                if (abcInfo.category === 'B') abcBadgeClass = "bg-amber-100 text-amber-700 font-bold border border-amber-200";
+
+                return `
+                    <tr class="hover:bg-ice-50/50 transition border-b border-ice-100">
+                        <td class="p-3">
+                            <div class="flex items-center gap-2">
+                                <img src="${p.image}" onerror="this.src='https://placehold.co/100x100/E2ECF4/102A45?text=Azure'" class="w-10 h-10 object-cover rounded-xl shadow-sm shrink-0">
+                                <input type="url" value="${p.image}" onchange="updateProductField('${p.id}', 'image', this.value)" class="w-28 sm:w-32 border border-ice-200 rounded px-2 py-1 bg-white text-[10px] focus:outline-none focus:border-dusty-blue" title="編輯圖片 URL">
+                            </div>
+                        </td>
+                        <td class="p-3 font-bold text-slate">
+                            <input type="text" value="${p.title}" onchange="updateProductField('${p.id}', 'title', this.value)" class="w-full border border-ice-200 rounded px-2 py-1 bg-white text-xs font-bold focus:outline-none focus:border-dusty-blue">
+                        </td>
+                        <td class="p-3 text-slate/80">${p.category}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] ${abcBadgeClass}">
+                                ${abcInfo.category} 類
+                            </span>
+                        </td>
+                        <td class="p-3 font-bold text-navy-deep">
+                            $<input type="number" value="${p.price}" onchange="updateProductField('${p.id}', 'price', this.value)" class="w-16 border border-ice-200 rounded px-2 py-1 bg-white focus:outline-none focus:border-dusty-blue">
+                        </td>
+                        <td class="p-3">
+                            <input type="number" value="${p.stock}" onchange="updateProductField('${p.id}', 'stock', this.value)" class="w-14 border border-ice-200 rounded px-2 py-1 bg-white focus:outline-none focus:border-dusty-blue">
+                        </td>
+                        <td class="p-3 font-mono font-bold text-slate/80">$${abcInfo.totalValue.toLocaleString()}</td>
+                        <td class="p-3 font-medium text-slate">${p.sales}</td>
+                        <td class="p-3">
+                            ${p.isOnline
+                            ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold text-[10px]">已上架</span>`
+                            : `<span class="bg-slate/10 text-slate px-2 py-0.5 rounded-full text-[10px]">已下架</span>`}
+                        </td>
+                        <td class="p-3 text-center">
+                            <button onclick="toggleProductOnline('${p.id}')" class="px-3 py-1 rounded-full border text-[11px] font-medium transition ${p.isOnline ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}">
+                                ${p.isOnline ? '下架' : '上架'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('') : `<tr><td colspan="10" class="text-center py-10 text-slate/50">查無符合條件的商品</td></tr>`;
+
+            const ordersTbody = document.getElementById('admin-orders-tbody');
+            if (state.orders.length === 0) {
+                ordersTbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-slate/50">目前尚無任何銷售訂單紀錄</td></tr>`;
+            } else {
+                ordersTbody.innerHTML = state.orders.map(o => `
+                    <tr class="hover:bg-ice-50/50 transition border-b border-ice-100">
+                        <td class="p-3.5 font-mono font-bold text-navy-deep">${o.id}</td>
+                        <td class="p-3.5 font-medium text-slate">${o.customer}</td>
+                        <td class="p-3.5 text-slate/80 max-w-xs truncate">${o.itemsSummary}</td>
+                        <td class="p-3.5"><span class="bg-ice-100 text-navy-deep px-2 py-0.5 rounded text-[11px] font-bold">${o.payment}</span></td>
+                        <td class="p-3.5 font-serif font-bold text-dusty-blue">$${o.total}</td>
+                        <td class="p-3.5">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${o.status === '處理中' ? 'bg-amber-100 text-amber-800' : (o.status === '已出貨' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800')}">
+                                ${o.status}
+                            </span>
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <select onchange="updateOrderStatus('${o.id}', this.value)" class="border border-ice-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none">
+                                <option value="處理中" ${o.status === '處理中' ? 'selected' : ''}>處理中</option>
+                                <option value="已出貨" ${o.status === '已出貨' ? 'selected' : ''}>已出貨</option>
+                                <option value="已完成" ${o.status === '已完成' ? 'selected' : ''}>已完成</option>
+                            </select>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function updateProductField(id, field, value) {
+            const p = state.products.find(x => x.id === id);
+            if (!p) return;
+
+            if (field === 'price' || field === 'stock') {
+                p[field] = parseInt(value) || 0;
+            } else {
+                p[field] = value;
+            }
+
+            persistData();
+            renderAdmin();
+            renderStore();
+            showToast("商品資料已更新");
+        }
+
+        function toggleProductOnline(id) {
+            const product = state.products.find(p => p.id === id);
+            if (product) {
+                product.isOnline = !product.isOnline;
+                persistData();
+                renderAdmin();
+                renderStore();
+                showToast(`商品已切換為：${product.isOnline ? '上架' : '下架'}`);
+            }
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = newStatus;
+                persistData();
+                renderAdmin();
+                showToast(`訂單 ${orderId} 狀態已更新為：${newStatus}`);
+            }
+        }
+
+        function openAddProductModal() { document.getElementById('add-product-modal').classList.remove('hidden'); }
+        function closeAddProductModal() { document.getElementById('add-product-modal').classList.add('hidden'); }
+
+        function handleAddProductSubmit(e) {
+            e.preventDefault();
+            const newProduct = {
+                id: `PROD-${Date.now().toString().slice(-4)}`,
+                title: document.getElementById('new-prod-title').value,
+                category: document.getElementById('new-prod-cat').value,
+                price: parseInt(document.getElementById('new-prod-price').value),
+                originalPrice: parseInt(document.getElementById('new-prod-price').value) + 300,
+                sales: 0,
+                stock: parseInt(document.getElementById('new-prod-stock').value),
+                rating: 5.0,
+                image: document.getElementById('new-prod-image').value,
+                material: "精選優質冰藍飾品材質",
+                badge: "全新上架",
+                isOnline: true
+            };
+            state.products.unshift(newProduct);
+            persistData();
+            renderAdmin();
+            renderStore();
+            closeAddProductModal();
+            e.target.reset();
+            showToast("新飾品成功上架！");
+        }
+
+        function switchAdminTab(tab) {
+            const secInv = document.getElementById('admin-sec-inventory');
+            const secOrders = document.getElementById('admin-sec-orders');
+            const btnInv = document.getElementById('tab-btn-inventory');
+            const btnOrders = document.getElementById('tab-btn-orders');
+
+            if (tab === 'inventory') {
+                secInv.classList.remove('hidden');
+                secOrders.classList.add('hidden');
+                btnInv.className = "px-5 sm:px-6 py-3.5 text-xs font-bold border-b-2 border-navy-deep text-navy-deep transition shrink-0";
+                btnOrders.className = "px-5 sm:px-6 py-3.5 text-xs font-bold text-slate/60 hover:text-navy-deep border-b-2 border-transparent transition shrink-0";
+            } else {
+                secInv.classList.add('hidden');
+                secOrders.classList.remove('hidden');
+                btnOrders.className = "px-5 sm:px-6 py-3.5 text-xs font-bold border-b-2 border-navy-deep text-navy-deep transition shrink-0";
+                btnInv.className = "px-5 sm:px-6 py-3.5 text-xs font-bold text-slate/60 hover:text-navy-deep border-b-2 border-transparent transition shrink-0";
+            }
+        }
+
+        // Toast 訊息提示
+        function showToast(msg, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `bg-navy-deep text-white text-sm px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/30 animate-fade-in pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-ice-200 text-sm"></i><span class="font-medium">${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        // 初始化
+        window.onload = function () {
+            updateUserUI();
+            updateCartUI();
+            renderStore();
+        };
+    </script>
+</body>
+
+</html>
