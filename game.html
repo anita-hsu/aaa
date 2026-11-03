@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Journal - 寶石消除挑戰</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Playfair+Display:ital,wght@0,600;1,400&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- 粒子特效 Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            background: linear-gradient(135deg, #eef4f8 0%, #e2ebf3 100%);
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-serif {
+            font-family: 'Noto Serif TC', 'Playfair Display', serif;
+        }
+
+        /* 背景微光質感 */
+        .bg-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(199, 217, 232, 0.6);
+        }
+
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        /* 寶石卡片視覺美化 */
+        .gem-cell {
+            aspect-ratio: 1;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 10px -2px rgba(14, 165, 233, 0.08), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .gem-cell::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.4) 50%, transparent 55%);
+            transform: rotate(30deg) translateY(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .gem-cell:hover::after {
+            transform: rotate(30deg) translateY(100%);
+        }
+
+        .gem-cell:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 10px 20px -4px rgba(14, 165, 233, 0.2);
+        }
+
+        .gem-selected {
+            outline: 3px solid #0284C7;
+            outline-offset: -2px;
+            transform: scale(0.92) !important;
+            box-shadow: 0 0 15px rgba(2, 132, 199, 0.4) !important;
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 8px rgba(2, 132, 199, 0.4);
+            }
+
+            100% {
+                box-shadow: 0 0 20px rgba(2, 132, 199, 0.8);
+            }
+        }
+
+        .gem-empty {
+            opacity: 0;
+            transform: scale(0.2) rotate(45deg);
+        }
+
+        /* 寶石圖案浮光畫風 */
+        .gem-icon {
+            filter: drop-shadow(0 2px 4px rgba(14, 165, 233, 0.2));
+            transition: transform 0.2s ease;
+        }
+
+        .gem-cell:hover .gem-icon {
+            transform: scale(1.15) rotate(6deg);
+        }
+
+        /* 寶石爆裂灑落粒子 (CSS DOM Fallback) */
+        .falling-gem {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            animation: gemDrop 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes gemDrop {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(0.5);
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(90vh) rotate(720deg) scale(1.2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-slate-700 min-h-screen flex flex-col justify-between selection:bg-blue-200">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-blue-100/80 shadow-sm sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-6 py-3.5 flex items-center justify-between">
+            <div class="flex flex-col">
+                <span class="font-serif text-xl font-bold tracking-widest text-blue-950">Azure Journal</span>
+                <span class="text-[9px] tracking-[0.25em] text-sky-600 uppercase font-medium">Gem Match-3 Luxe
+                    Edition</span>
+            </div>
+            <a href="index2.html"
+
+                class="bg-white hover:bg-blue-50 text-blue-950 text-xs px-4 py-2 rounded-full border border-blue-200 font-medium shadow-sm transition flex items-center gap-1.5">
+                <i class="fa-solid fa-house text-sky-600"></i> 返回飾品官網
+            </a>
+        </div>
+    </header>
+
+    <!-- 遊戲主內容 -->
+    <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 py-7 sm:py-10 flex-1">
+        <div class="mb-6 sm:mb-8 text-center lg:text-left">
+            <span class="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase text-sky-700 bg-white/70 border border-blue-100 px-3 py-1.5 rounded-full mb-3">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Azure Jewel Quest
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-serif font-bold text-blue-950 mb-2">湛藍寶石魔法連線</h1>
+            <p class="text-xs sm:text-sm text-slate-500">交換相鄰寶石，連成 3 顆以上，累積分數解鎖專屬驚喜。</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)] gap-5 lg:gap-8 items-start">
+            <!-- 遊戲棋盤區 -->
+            <div class="order-2 lg:order-1 w-full max-w-[520px] mx-auto lg:mx-0">
+                <div class="relative w-full aspect-square bg-glass rounded-[2rem] p-3 sm:p-5 border border-blue-100 shadow-xl">
+                    <div id="game-board" class="board-grid w-full"></div>
+
+                    <!-- 開始介面 -->
+                    <div id="game-start-screen"
+                        class="absolute inset-0 bg-blue-950/70 backdrop-blur-md z-20 rounded-[2rem] flex flex-col items-center justify-center text-white p-6 text-center">
+                        <div class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-3xl mb-3 border border-white/20 shadow-inner">💎</div>
+                        <h3 class="text-xl font-serif font-bold mb-1.5 tracking-wide">冰藍寶石採集考驗</h3>
+                        <p class="text-xs text-blue-100/90 mb-6 leading-relaxed max-w-xs">在 15 步內累積 2,000 分，解鎖本次限定優惠碼。</p>
+                        <button onclick="startGame()"
+                            class="bg-gradient-to-r from-sky-400 to-blue-600 text-white font-bold text-xs px-9 py-3.5 rounded-full shadow-lg hover:brightness-110 transition transform hover:scale-105 active:scale-95 border border-white/20">
+                            開始挑戰
+                        </button>
+                    </div>
+
+                    <!-- 結束/結算介面 -->
+                    <div id="game-over-screen"
+                        class="absolute inset-0 bg-blue-950/90 backdrop-blur-md z-30 rounded-[2rem] hidden flex flex-col items-center justify-center text-white p-5 sm:p-6 text-center">
+                        <div id="game-result-icon" class="text-5xl mb-2 animate-bounce">🎉</div>
+                        <h3 id="game-result-title" class="text-2xl font-serif font-bold mb-1 tracking-wide">任務達成！</h3>
+                        <p id="game-result-desc" class="text-xs text-blue-100/90 mb-5">寶石雨已為您綻放，請領取專屬折扣碼！</p>
+
+                        <div id="reward-box" class="bg-white/10 backdrop-blur border border-white/20 px-5 py-3 rounded-2xl mb-5 shadow-inner">
+                            <div class="text-[10px] text-sky-300 font-medium mb-1">本次專屬優惠碼</div>
+                            <div id="coupon-code" class="text-lg sm:text-xl font-mono font-bold tracking-widest text-white select-all">AZURE-XXXX-XXXX</div>
+                            <div class="text-[10px] text-blue-100/70 mt-1">每次通關重新抽取</div>
+                        </div>
+
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <button onclick="startGame()"
+                                class="bg-white/20 hover:bg-white/30 text-white text-xs px-5 py-2.5 rounded-full transition border border-white/30 font-medium">
+                                再玩一次
+                            </button>
+                            <a href="index2.html"
+                                class="bg-gradient-to-r from-sky-400 to-blue-600 text-white text-xs px-6 py-2.5 rounded-full font-medium transition shadow-md hover:brightness-110">
+                                回到官網折抵
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="order-1 lg:order-2 w-full max-w-[520px] mx-auto lg:max-w-none space-y-4">
+                <!-- 儀表板：分數與剩餘步數 -->
+                <section class="bg-glass rounded-3xl p-5 sm:p-6 shadow-sm border border-blue-100">
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="bg-white/70 rounded-2xl p-3">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">剩餘步數</div>
+                            <div id="moves-display" class="text-3xl font-serif font-bold text-sky-600 mt-1">15</div>
+                        </div>
+                        <div class="bg-white/70 rounded-2xl p-3">
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">目前得分</div>
+                            <div id="score-display" class="text-2xl font-serif font-bold text-blue-950 mt-1">0 / 2000</div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-[10px] font-medium text-slate-500 mb-1.5">
+                            <span>通關進度</span><span id="score-percent">0%</span>
+                        </div>
+                        <div class="h-2.5 bg-blue-100 rounded-full overflow-hidden">
+                            <div id="score-progress" class="h-full w-0 bg-gradient-to-r from-sky-400 to-blue-600 rounded-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-white/75 rounded-3xl p-5 sm:p-6 border border-blue-100 shadow-sm">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="w-10 h-10 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center"><i class="fa-solid fa-bullseye"></i></span>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-widest text-sky-700 font-bold">Challenge</div>
+                            <h2 class="font-serif font-bold text-blue-950">達成 2,000 分</h2>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-6">每次有效消除都會累積分數。成功通關即可抽取一組全新的專屬優惠碼。</p>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-white/80 border-t border-blue-100 text-slate-400 text-xs py-5 text-center">
+        &copy; 2026 Azure Journal. 韓系寶石消除小遊戲.
+    </footer>
+
+    <!-- 遊戲 logic -->
+    <script>
+        const BOARD_SIZE = 6;
+        const TARGET_SCORE = 2000;
+        const INITIAL_MOVES = 15;
+
+        // 莫蘭迪寶石視覺配色與圖示
+        const GEM_TYPES = [
+            { id: 0, name: '海藍寶', icon: 'fa-gem', color: 'text-sky-500', bg: 'bg-gradient-to-br from-sky-50 to-sky-100/70' },
+            { id: 1, name: '月光石', icon: 'fa-droplet', color: 'text-blue-400', bg: 'bg-gradient-to-br from-blue-50 to-blue-100/70' },
+            { id: 2, name: '深海藍寶', icon: 'fa-cube', color: 'text-indigo-500', bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/70' },
+            { id: 3, name: '冰晶珍珠', icon: 'fa-circle', color: 'text-slate-400', bg: 'bg-gradient-to-br from-slate-50 to-slate-100/70' },
+            { id: 4, name: '璀璨金鑽', icon: 'fa-star', color: 'text-amber-400', bg: 'bg-gradient-to-br from-amber-50 to-amber-100/70' }
+        ];
+
+        let board = [];
+        let score = 0;
+        let moves = INITIAL_MOVES;
+        let selectedCell = null;
+        let isProcessing = false;
+        let currentCouponCode = null;
+        const usedCouponCodes = new Set();
+
+        function generateCouponCode() {
+            const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code;
+
+            do {
+                const randomValues = new Uint8Array(8);
+                if (window.crypto && window.crypto.getRandomValues) {
+                    window.crypto.getRandomValues(randomValues);
+                } else {
+                    randomValues.forEach((value, index) => {
+                        randomValues[index] = Math.floor(Math.random() * alphabet.length);
+                    });
+                }
+                const characters = Array.from(randomValues, value => alphabet[value % alphabet.length]);
+                code = `AZURE-${characters.slice(0, 4).join('')}-${characters.slice(4).join('')}`;
+            } while (usedCouponCodes.has(code));
+
+            usedCouponCodes.add(code);
+            return code;
+        }
+
+        function saveGameCoupon(code) {
+            let coupons = [];
+            try {
+                const storedCoupons = JSON.parse(localStorage.getItem('azure_v4_game_coupons') || '[]');
+                coupons = Array.isArray(storedCoupons) ? storedCoupons : [];
+            } catch {
+                coupons = [];
+            }
+
+            coupons.push({ code, discount: 200, used: false, issuedAt: new Date().toISOString() });
+            localStorage.setItem('azure_v4_game_coupons', JSON.stringify(coupons));
+        }
+
+        function startGame() {
+            score = 0;
+            moves = INITIAL_MOVES;
+            selectedCell = null;
+            isProcessing = false;
+
+            updateUI();
+            document.getElementById('game-start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+
+            initBoard();
+        }
+
+        function initBoard() {
+            board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null));
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    let type;
+                    do {
+                        type = Math.floor(Math.random() * GEM_TYPES.length);
+                    } while (
+                        (r >= 2 && board[r - 1][c] === type && board[r - 2][c] === type) ||
+                        (c >= 2 && board[r][c - 1] === type && board[r][c - 2] === type)
+                    );
+                    board[r][c] = type;
+                }
+            }
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('game-board');
+            container.innerHTML = '';
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    const val = board[r][c];
+
+                    if (val === null) {
+                        cell.className = 'gem-cell gem-empty bg-slate-100/60 rounded-2xl';
+                    } else {
+                        const gemType = GEM_TYPES[val];
+                        cell.className = `gem-cell ${gemType.bg} rounded-2xl flex items-center justify-center cursor-pointer border border-white/60`;
+                        if (selectedCell && selectedCell.r === r && selectedCell.c === c) {
+                            cell.classList.add('gem-selected');
+                        }
+                        cell.innerHTML = `<i class="fa-solid ${gemType.icon} ${gemType.color} text-xl gem-icon"></i>`;
+                    }
+
+                    cell.onclick = () => handleCellClick(r, c);
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        async function handleCellClick(r, c) {
+            if (isProcessing) return;
+
+            if (!selectedCell) {
+                selectedCell = { r, c };
+                renderBoard();
+            } else {
+                if (selectedCell.r === r && selectedCell.c === c) {
+                    selectedCell = null;
+                    renderBoard();
+                    return;
+                }
+
+                const isAdjacent = (Math.abs(selectedCell.r - r) + Math.abs(selectedCell.c - c)) === 1;
+
+                if (isAdjacent) {
+                    const prev = { ...selectedCell };
+                    selectedCell = null;
+                    await trySwap(prev.r, prev.c, r, c);
+                } else {
+                    selectedCell = { r, c };
+                    renderBoard();
+                }
+            }
+        }
+
+        async function trySwap(r1, c1, r2, c2) {
+            isProcessing = true;
+
+            // 1. 交換
+            swap(r1, c1, r2, c2);
+            renderBoard();
+            await sleep(200);
+
+            // 2. 檢查消除
+            let matches = getMatches();
+            if (matches.length > 0) {
+                moves--;
+                updateUI();
+                await clearAndCascade();
+            } else {
+                // 3. 無效交換：復原
+                swap(r1, c1, r2, c2);
+                renderBoard();
+                isProcessing = false;
+            }
+        }
+
+        function swap(r1, c1, r2, c2) {
+            const temp = board[r1][c1];
+            board[r1][c1] = board[r2][c2];
+            board[r2][c2] = temp;
+        }
+
+        function getMatches() {
+            const matched = new Set();
+
+            // 橫向檢查
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE - 2; c++) {
+                    const val = board[r][c];
+                    if (val !== null && val === board[r][c + 1] && val === board[r][c + 2]) {
+                        matched.add(`${r},${c}`);
+                        matched.add(`${r},${c + 1}`);
+                        matched.add(`${r},${c + 2}`);
+                    }
+                }
+            }
+
+            // 縱向檢查
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                for (let r = 0; r < BOARD_SIZE - 2; r++) {
+                    const val = board[r][c];
+                    if (val !== null && val === board[r + 1][c] && val === board[r + 2][c]) {
+                        matched.add(`${r},${c}`);
+                        matched.add(`${r + 1},${c}`);
+                        matched.add(`${r + 2},${c}`);
+                    }
+                }
+            }
+
+            return Array.from(matched).map(key => {
+                const [r, c] = key.split(',').map(Number);
+                return { r, c };
+            });
+        }
+
+        async function clearAndCascade() {
+            let matches = getMatches();
+
+            while (matches.length > 0) {
+                // 加分：每顆寶石 20 分
+                score += matches.length * 20;
+                updateUI();
+
+                // 清除寶石
+                matches.forEach(({ r, c }) => {
+                    board[r][c] = null;
+                });
+                renderBoard();
+                await sleep(220);
+
+                // 寶石下落補滿
+                applyGravityAndRefill();
+                renderBoard();
+                await sleep(280);
+
+                // 再次檢查連鎖
+                matches = getMatches();
+            }
+
+            isProcessing = false;
+
+            // 判斷勝負
+            if (score >= TARGET_SCORE) {
+                endGame(true);
+            } else if (moves <= 0) {
+                endGame(false);
+            }
+        }
+
+        function applyGravityAndRefill() {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                let writeRow = BOARD_SIZE - 1;
+                for (let r = BOARD_SIZE - 1; r >= 0; r--) {
+                    if (board[r][c] !== null) {
+                        board[writeRow][c] = board[r][c];
+                        if (writeRow !== r) {
+                            board[r][c] = null;
+                        }
+                        writeRow--;
+                    }
+                }
+                // 補齊上方新寶石
+                for (let r = writeRow; r >= 0; r--) {
+                    board[r][c] = Math.floor(Math.random() * GEM_TYPES.length);
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('moves-display').textContent = moves;
+            document.getElementById('score-display').textContent = `${score} / ${TARGET_SCORE}`;
+            const progress = Math.min(100, Math.round((score / TARGET_SCORE) * 100));
+            document.getElementById('score-progress').style.width = `${progress}%`;
+            document.getElementById('score-percent').textContent = `${progress}%`;
+        }
+
+        function endGame(isWin) {
+            const screen = document.getElementById('game-over-screen');
+            const title = document.getElementById('game-result-title');
+            const desc = document.getElementById('game-result-desc');
+            const icon = document.getElementById('game-result-icon');
+            const rewardBox = document.getElementById('reward-box');
+
+            screen.classList.remove('hidden');
+
+            if (isWin) {
+                currentCouponCode = generateCouponCode();
+                document.getElementById('coupon-code').textContent = currentCouponCode;
+                saveGameCoupon(currentCouponCode);
+                icon.textContent = "💎";
+                title.textContent = "完美通關！";
+                desc.textContent = `成功得到 ${score} 分！滿滿寶石灑落為您慶賀！`;
+                rewardBox.classList.remove('hidden');
+
+                // 觸發多波寶石彩帶灑落效果
+                triggerGemRain();
+            } else {
+                icon.textContent = "💔";
+                title.textContent = "步數用盡！";
+                desc.textContent = `這次得分為 ${score} 分，還差一點點就能解鎖優惠囉！`;
+                rewardBox.classList.add('hidden');
+            }
+        }
+
+        // 寶石雨與多彩狂歡灑落動畫
+        function triggerGemRain() {
+            // 1. Confetti Canvas 特效噴發
+            if (typeof confetti === 'function') {
+                const count = 200;
+                const defaults = {
+                    origin: { y: 0.6 }
+                };
+
+                function fire(particleRatio, opts) {
+                    confetti(Object.assign({}, defaults, opts, {
+                        particleCount: Math.floor(count * particleRatio)
+                    }));
+                }
+
+                fire(0.25, {
+                    spread: 26,
+                    startVelocity: 55,
+                    colors: ['#38BDF8', '#0284C7', '#E0F2FE']
+                });
+                fire(0.2, {
+                    spread: 60,
+                    colors: ['#F59E0B', '#FFFFFF', '#7DD3FC']
+                });
+                fire(0.35, {
+                    spread: 100,
+                    decay: 0.91,
+                    scalar: 0.8
+                });
+                fire(0.1, {
+                    spread: 120,
+                    startVelocity: 25,
+                    decay: 0.92,
+                    colors: ['#BAE6FD', '#38BDF8', '#FFFFFF']
+                });
+            }
+
+            // 2. DOM 寶石灑落動態雨 (Gem Rain Fallback)
+            const icons = ['fa-gem', 'fa-droplet', 'fa-star', 'fa-cube', 'fa-circle'];
+            const colors = ['text-sky-400', 'text-blue-300', 'text-amber-300', 'text-cyan-400', 'text-indigo-300'];
+
+            for (let i = 0; i < 35; i++) {
+                setTimeout(() => {
+                    const gem = document.createElement('div');
+                    const randIcon = icons[Math.floor(Math.random() * icons.length)];
+                    const randColor = colors[Math.floor(Math.random() * colors.length)];
+
+                    gem.className = `falling-gem ${randColor} text-2xl`;
+                    gem.innerHTML = `<i class="fa-solid ${randIcon} filter drop-shadow-lg"></i>`;
+
+                    gem.style.left = `${Math.random() * 95}vw`;
+                    gem.style.top = `-40px`;
+                    gem.style.animationDuration = `${1.8 + Math.random() * 1.5}s`;
+
+                    document.body.appendChild(gem);
+
+                    setTimeout(() => gem.remove(), 3200);
+                }, i * 60);
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+
+</html>
