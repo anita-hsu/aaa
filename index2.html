@@ -113,8 +113,9 @@
             </marquee>
         </div>
 
+        <div class="sticky top-0 z-40">
         <!-- 頂部主導覽列 (全響應式 RWD 佈局) -->
-        <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-ice-200 shadow-sm w-full">
+        <header class="bg-white/90 backdrop-blur-md border-b border-ice-200 shadow-sm w-full">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
                 
                 <div class="flex items-center justify-between w-full md:w-auto">
@@ -207,6 +208,7 @@
                 </button>
             </div>
         </nav>
+        </div>
 
         <!-- VIEW 1: 顧客前台視圖 -->
         <main id="view-store" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-fade-in w-full">
@@ -611,12 +613,22 @@
                     <div id="checkout-items-summary" class="space-y-1.5 text-slate max-h-32 overflow-y-auto pr-1"></div>
                     <div class="border-t border-ice-200 pt-2.5 space-y-1.5 text-slate">
                         <div class="flex justify-between"><span>商品小計：</span><span id="co-subtotal">$0</span></div>
-                        <div class="flex justify-between text-navy-deep font-medium"><span>滿千折百優惠：</span><span id="co-discount">-$0</span></div>
+                        <div class="flex justify-between text-navy-deep font-medium"><span id="co-discount-label">滿千折百優惠：</span><span id="co-discount">-$0</span></div>
                         <div class="flex justify-between"><span>運費 (滿 $499 免運)：</span><span id="co-shipping">$60</span></div>
                         <div class="flex justify-between font-bold text-navy-deep text-sm border-t border-ice-200 pt-2">
                             <span>應付總金額：</span><span id="co-total" class="text-dusty-blue text-base">$0</span>
                         </div>
                     </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-ice-200">
+                    <label for="game-coupon-input" class="block font-bold text-slate mb-1.5">遊戲通關優惠碼</label>
+                    <p class="text-[11px] text-slate/60 mb-3">通關可折抵 $200，與滿千折百優惠擇一使用；每組限用一次。</p>
+                    <div class="flex gap-2">
+                        <input id="game-coupon-input" type="text" autocomplete="off" onkeydown="if(event.key === 'Enter'){event.preventDefault();applyGameCoupon();}" placeholder="AZURE-XXXX-XXXX" class="min-w-0 flex-1 border border-ice-200 rounded-xl px-3 py-2.5 bg-ice-50/50 text-xs font-mono uppercase focus:outline-none focus:border-dusty-blue">
+                        <button type="button" onclick="applyGameCoupon()" class="bg-navy-deep hover:bg-dusty-blue text-white text-xs font-medium px-4 rounded-xl transition">套用</button>
+                    </div>
+                    <p id="game-coupon-feedback" role="status" aria-live="polite" class="text-[11px] text-slate/60 mt-2">完成遊戲通關後，可在此輸入取得的優惠碼。</p>
                 </div>
 
                 <div>
@@ -802,7 +814,7 @@
         </div>
 
         <div class="border-t border-ice-100 py-6 text-center text-slate/50 text-[11px]">
-            &copy; 2026 Azure Journal. Blue Aesthetic E-Commerce System with ABC Inventory Control. All Rights Reserved.
+            &copy; <a href="game.html" class="hover:text-dusty-blue transition">2026 Azure Journal. Blue Aesthetic E-Commerce System with ABC Inventory Control. All Rights Reserved.</a>
         </div>
     </footer>
 
@@ -1195,6 +1207,8 @@
             isRegisterMode: false,
             isTopSalesExpanded: true
         };
+        const GAME_COUPONS_KEY = 'azure_v4_game_coupons';
+        let appliedGameCoupon = null;
 
         // 持久化保存
         function persistData() {
@@ -1721,6 +1735,62 @@ function renderStore() {
         }
 
         // 結帳 Modal
+        function getGameCoupons() {
+            try {
+                const coupons = JSON.parse(localStorage.getItem(GAME_COUPONS_KEY) || '[]');
+                return Array.isArray(coupons) ? coupons : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function setGameCouponFeedback(message, status = 'neutral') {
+            const feedback = document.getElementById('game-coupon-feedback');
+            const color = status === 'success' ? 'text-emerald-700' : status === 'error' ? 'text-rose-600' : 'text-slate/60';
+            feedback.className = `text-[11px] ${color} mt-2`;
+            feedback.textContent = message;
+        }
+
+        function applyGameCoupon() {
+            const input = document.getElementById('game-coupon-input');
+            const code = input.value.trim().toUpperCase();
+            input.value = code;
+
+            if (!code) {
+                appliedGameCoupon = null;
+                updateCheckoutTotals();
+                setGameCouponFeedback('請先輸入遊戲通關取得的優惠碼。', 'error');
+                return;
+            }
+
+            const coupon = getGameCoupons().find(item => item.code === code && !item.used);
+            if (!coupon) {
+                appliedGameCoupon = null;
+                updateCheckoutTotals();
+                setGameCouponFeedback('優惠碼無效或已使用，請確認後再試。', 'error');
+                return;
+            }
+
+            appliedGameCoupon = { code: coupon.code, discount: Number(coupon.discount) || 200 };
+            updateCheckoutTotals();
+            setGameCouponFeedback(`已套用 ${coupon.code}，折抵 $${Math.min(state.cart.reduce((sum, item) => sum + item.price * item.qty, 0), appliedGameCoupon.discount)}。`, 'success');
+        }
+
+        function updateCheckoutTotals() {
+            const subtotal = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+            const discount = appliedGameCoupon
+                ? Math.min(subtotal, appliedGameCoupon.discount)
+                : subtotal >= 1000 ? 100 : 0;
+            const shipping = subtotal >= 499 ? 0 : (subtotal > 0 ? 60 : 0);
+            const finalTotal = Math.max(0, subtotal - discount + shipping);
+
+            document.getElementById('co-subtotal').textContent = `$${subtotal}`;
+            document.getElementById('co-discount-label').textContent = appliedGameCoupon ? '遊戲優惠碼折抵：' : '滿千折百優惠：';
+            document.getElementById('co-discount').textContent = `-$${discount}`;
+            document.getElementById('co-shipping').textContent = shipping === 0 ? '免運 ($0)' : `$${shipping}`;
+            document.getElementById('co-total').textContent = `$${finalTotal}`;
+        }
+
         function openCheckoutModal() {
             if (state.cart.length === 0) return;
 
@@ -1739,11 +1809,6 @@ function renderStore() {
                 handlePaymentMethodChange('信用卡線上支付');
             }
 
-            const subtotal = state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const discount = subtotal >= 1000 ? 100 : 0;
-            const shipping = subtotal >= 499 ? 0 : 60;
-            const finalTotal = Math.max(0, subtotal - discount + shipping);
-
             const summaryContainer = document.getElementById('checkout-items-summary');
             summaryContainer.innerHTML = state.cart.map(i => `
                 <div class="flex justify-between text-[11px]">
@@ -1752,10 +1817,7 @@ function renderStore() {
                 </div>
             `).join('');
 
-            document.getElementById('co-subtotal').textContent = `$${subtotal}`;
-            document.getElementById('co-discount').textContent = `-$${discount}`;
-            document.getElementById('co-shipping').textContent = shipping === 0 ? '免運 ($0)' : `$${shipping}`;
-            document.getElementById('co-total').textContent = `$${finalTotal}`;
+            updateCheckoutTotals();
 
             document.getElementById('checkout-modal').classList.remove('hidden');
         }
@@ -1766,6 +1828,14 @@ function renderStore() {
 
         function handleCheckoutSubmit(e) {
             e.preventDefault();
+
+            if (appliedGameCoupon && !getGameCoupons().some(coupon => coupon.code === appliedGameCoupon.code && !coupon.used)) {
+                appliedGameCoupon = null;
+                updateCheckoutTotals();
+                setGameCouponFeedback('優惠碼已失效或已使用，請重新確認。', 'error');
+                showToast('優惠碼已失效或已使用，請重新確認。', 'error');
+                return;
+            }
 
             const name = document.getElementById('co-name').value;
             const phone = document.getElementById('co-phone').value;
@@ -1789,9 +1859,12 @@ function renderStore() {
             }
 
             const subtotal = state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const discount = subtotal >= 1000 ? 100 : 0;
+            const discount = appliedGameCoupon
+                ? Math.min(subtotal, appliedGameCoupon.discount)
+                : subtotal >= 1000 ? 100 : 0;
             const shipping = subtotal >= 499 ? 0 : 60;
             const finalTotal = Math.max(0, subtotal - discount + shipping);
+            const couponCode = appliedGameCoupon ? appliedGameCoupon.code : null;
 
             state.cart.forEach(cartItem => {
                 const product = state.products.find(p => p.id === cartItem.id);
@@ -1808,11 +1881,26 @@ function renderStore() {
                 address: address,
                 itemsSummary: state.cart.map(c => `${c.title} x${c.qty}`).join(', '),
                 payment: payment,
+                discount: discount,
+                couponCode: couponCode,
                 shippingFee: shipping === 0 ? '免運 ($0)' : `$${shipping}`,
                 total: finalTotal,
                 status: "處理中",
                 date: new Date().toLocaleString()
             };
+
+            if (couponCode) {
+                const coupons = getGameCoupons();
+                const coupon = coupons.find(item => item.code === couponCode && !item.used);
+                if (coupon) {
+                    coupon.used = true;
+                    coupon.usedAt = new Date().toISOString();
+                    localStorage.setItem(GAME_COUPONS_KEY, JSON.stringify(coupons));
+                }
+                appliedGameCoupon = null;
+                document.getElementById('game-coupon-input').value = '';
+                setGameCouponFeedback('完成遊戲通關後，可在此輸入取得的優惠碼。');
+            }
 
             state.orders.unshift(newOrder);
             state.cart = [];
