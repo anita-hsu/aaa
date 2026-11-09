@@ -293,6 +293,20 @@
                 <span id="product-count-label" class="text-xs bg-white px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-ice-200 text-slate shadow-sm font-medium shrink-0">共 0 款</span>
             </div>
 
+            <section class="bg-white rounded-3xl border border-ice-200 shadow-sm p-5 sm:p-6 mb-6" aria-labelledby="preference-title">
+                <div class="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h3 id="preference-title" class="font-serif font-bold text-navy-deep text-base flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-dusty-blue"></i> 依喜好挑選飾品
+                        </h3>
+                        <p class="text-[11px] text-slate/60 mt-1">點選喜歡的標籤，可一次挑選多種風格；商品符合任一標籤就會顯示。</p>
+                    </div>
+                    <button type="button" onclick="clearPreferenceTags()" class="shrink-0 text-[11px] text-dusty-blue hover:text-navy-deep underline">清除偏好</button>
+                </div>
+                <div id="preference-tag-list" class="flex flex-wrap gap-2" aria-label="飾品喜好標籤"></div>
+                <p id="preference-summary" class="text-[11px] text-slate/60 mt-3" role="status" aria-live="polite"></p>
+            </section>
+
             <!-- 商品網格區 (RWD 流體響應式 1 -> 2 -> 3 -> 4 欄) -->
             <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"></div>
         </main>
@@ -550,6 +564,7 @@
 
                     <div class="space-y-2 text-xs text-slate/80 mb-6 border-t border-b border-ice-100 py-3.5">
                         <p><strong><i class="fa-solid fa-gem text-dusty-blue mr-1"></i> 材質說明：</strong> <span id="modal-material">天然寶石 / S925銀</span></p>
+                        <div class="flex items-start gap-1"><strong class="shrink-0"><i class="fa-solid fa-tags text-dusty-blue mr-1"></i> 商品標籤：</strong><div id="modal-product-tags" class="flex flex-wrap gap-1.5"></div></div>
                         <p><strong><i class="fa-solid fa-sparkles text-dusty-blue mr-1"></i> 品牌包裝：</strong> 隨件附贈冰藍絨布袋與擦銀布。</p>
                     </div>
 
@@ -742,6 +757,11 @@
                 <div>
                     <label class="block font-bold text-slate mb-1.5">圖片網址 (URL) *</label>
                     <input type="url" id="new-prod-image" required class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="https://tse...">
+                </div>
+                <div>
+                    <label for="new-prod-tags" class="block font-bold text-slate mb-1.5">商品標籤</label>
+                    <input type="text" id="new-prod-tags" class="w-full border border-ice-200 rounded-2xl p-3 bg-ice-50/50 focus:outline-none focus:border-dusty-blue transition" placeholder="以逗號分隔，例如：珍珠、日常簡約、送禮推薦">
+                    <p class="text-[10px] text-slate/60 mt-1">顧客可依這些標籤篩選；未填寫時會依商品資料自動推薦標籤。</p>
                 </div>
                 <button type="submit" class="w-full bg-navy-deep hover:bg-dusty-blue text-white font-medium py-3.5 rounded-full transition shadow-md mt-4">
                     確認新增上架
@@ -1012,15 +1032,15 @@
             },
             {
                 id: "HAIR-04",
-                title: "海藍寶石髮夾套組 (Aquamarine Pearl Pins)",
+                title: "海藍寶石珍珠髮夾套組 (Aquamarine Pearl Pins)",
                 category: "髮飾",
                 price: 480,
                 originalPrice: 680,
                 sales: 160,
                 stock: 20,
                 rating: 4.9,
-                image: "https://tse1.mm.bing.net/th/id/OIP.-RekXNcLsPW0unczG_tkTQHaHa?r=0&pid=Api&h=220&P=0",
-                material: "天然淡水色 + 莫蘭迪藍鋯石",
+                image: "https://img.alicdn.com/imgextra/i1/2216468373823/O1CN01uMAsMR1e6zHuaHonr_!!4611686018427380031-2-item_pic.png",
+                material: "天然淡水色珍珠 + 莫蘭迪藍鋯石",
                 badge: "套組優惠",
                 isOnline: true
             },
@@ -1201,6 +1221,7 @@
             isAdminLoggedIn: false,
             searchQuery: "",
             currentCategory: "all",
+            selectedTags: [],
             adminProductQuery: "",
             adminProductCategory: "all",
             selectedProductId: null,
@@ -1364,52 +1385,132 @@
             return { abcMap, grandTotalValue };
         }
 
+        function getProductTags(product) {
+            const details = [product.title, product.category, product.material, product.badge]
+                .map(value => String(value || ''))
+                .join(' ');
+            const inferredTags = [
+                { label: '天然寶石', pattern: /海藍寶|月光石|藍寶石|青金石|天青石|天然.*石|寶石/ },
+                { label: '水晶琉璃', pattern: /水晶|鋯石|琉璃|結晶|鑽石|碎鑽/ },
+                { label: 'S925純銀', pattern: /S925|純銀|銀針|銀配件|銀鍊|銀鏈/i },
+                { label: '金色系', pattern: /18K|鍍金|黃銅|金色/ },
+                { label: '珍珠', pattern: /珍珠|pearl/i },
+                { label: '日常簡約', pattern: /極簡|幾何|百搭|日常|細戒|低調/ },
+                { label: '浪漫甜美', pattern: /星芒|水滴|花瓣|蝴蝶結|流蘇|浪漫|童話|月相/ },
+                { label: '法式復古', pattern: /法式|復古|皇后|大理石/ }
+            ].filter(tag => tag.pattern.test(details)).map(tag => tag.label);
+            const customTags = Array.isArray(product.tags)
+                ? product.tags
+                : (typeof product.tags === 'string' ? product.tags.split(/[,，、]/) : []);
+            const tags = [product.category, ...inferredTags, ...customTags]
+                .map(tag => String(tag || '').trim())
+                .filter(Boolean);
+
+            return [...new Set(tags)];
+        }
+
+        function escapeHTML(value) {
+            return String(value).replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
+        function renderPreferenceTags() {
+            const container = document.getElementById('preference-tag-list');
+            const summary = document.getElementById('preference-summary');
+            const availableTags = [...new Set(
+                state.products.filter(product => product.isOnline).flatMap(getProductTags)
+            )];
+
+            container.replaceChildren();
+            availableTags.forEach(tag => {
+                const button = document.createElement('button');
+                const isSelected = state.selectedTags.includes(tag);
+                button.type = 'button';
+                button.textContent = `# ${tag}`;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.className = isSelected
+                    ? 'px-3 py-1.5 rounded-full text-[11px] font-medium bg-navy-deep text-white border border-navy-deep transition'
+                    : 'px-3 py-1.5 rounded-full text-[11px] font-medium bg-ice-50 text-slate border border-ice-200 hover:border-dusty-blue hover:text-navy-deep transition';
+                button.addEventListener('click', () => togglePreferenceTag(tag));
+                container.appendChild(button);
+            });
+
+            summary.textContent = state.selectedTags.length
+                ? `已選擇：${state.selectedTags.join('、')}（顯示符合任一偏好的商品）`
+                : '尚未選擇偏好，正在顯示全部符合目前分類與搜尋條件的飾品。';
+        }
+
+        function togglePreferenceTag(tag) {
+            state.selectedTags = state.selectedTags.includes(tag)
+                ? state.selectedTags.filter(selectedTag => selectedTag !== tag)
+                : [...state.selectedTags, tag];
+            renderStore();
+        }
+
+        function clearPreferenceTags() {
+            state.selectedTags = [];
+            renderStore();
+        }
+
         // 渲染前台商品網格
-       // 修正後的前台商品篩選渲染邏輯
-function renderStore() {
-    const grid = document.getElementById('products-grid');
-    const filtered = state.products.filter(p => {
-        // 採用 includes 模糊比對，避免 "戒指" 與 "戒指 / 情侶戒" 比對失敗
-        const matchesCat = (state.currentCategory === 'all') || 
-                           p.category.includes(state.currentCategory) || 
-                           state.currentCategory.includes(p.category) ||
-                           (state.currentCategory === '手鍊' && p.category === '手環');
-                           
-        const matchesSearch = p.title.toLowerCase().includes(state.searchQuery.toLowerCase()) || 
-                              p.material.toLowerCase().includes(state.searchQuery.toLowerCase());
-        return p.isOnline && matchesCat && matchesSearch;
-    });
+        function renderStore() {
+            const grid = document.getElementById('products-grid');
+            renderPreferenceTags();
+            const filtered = state.products.filter(p => {
+                const matchesCat = (state.currentCategory === 'all') ||
+                    p.category.includes(state.currentCategory) ||
+                    state.currentCategory.includes(p.category) ||
+                    (state.currentCategory === '手鍊' && p.category === '手環');
+                const matchesSearch = p.title.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+                    p.material.toLowerCase().includes(state.searchQuery.toLowerCase());
+                const matchesTags = state.selectedTags.length === 0 ||
+                    state.selectedTags.some(tag => getProductTags(p).includes(tag));
 
-    document.getElementById('product-count-label').textContent = `共 ${filtered.length} 款`;
+                return p.isOnline && matchesCat && matchesSearch && matchesTags;
+            });
 
-    if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate/50 bg-white rounded-3xl border border-ice-200">未找到符合條件的湛藍飾品</div>`;
-    } else {
-        grid.innerHTML = filtered.map(p => `
-            <div class="product-card bg-white rounded-3xl border border-ice-200 overflow-hidden shadow-sm flex flex-col justify-between p-3.5 sm:p-4 group">
-                <div>
-                    <div class="relative overflow-hidden rounded-2xl mb-3 cursor-pointer bg-ice-50" onclick="openProductModal('${p.id}')">
-                        <img src="${p.image}" alt="${p.title}" onerror="this.src='https://placehold.co/400x400/E2ECF4/102A45?text=Azure+Journal'" class="w-full h-48 sm:h-52 object-cover group-hover:scale-105 transition duration-500">
-                        <span class="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur text-navy-deep text-[10px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full shadow-sm border border-ice-200">${p.badge || '精選'}</span>
-                    </div>
-                    <h4 class="font-serif font-bold text-slate text-xs sm:text-sm mt-1 mb-1 line-clamp-1 hover:text-navy-deep cursor-pointer" onclick="openProductModal('${p.id}')">${p.title}</h4>
-                    <p class="text-[11px] text-slate/60 mb-2 truncate font-light">${p.material}</p>
-                </div>
-                <div class="flex items-center justify-between mt-2 pt-3 border-t border-ice-100">
-                    <div>
-                        <span class="text-navy-deep font-serif font-bold text-base sm:text-lg">$${p.price}</span>
-                        <span class="text-slate/40 text-xs line-through ml-1">$${p.originalPrice}</span>
-                    </div>
-                    <button onclick="addToCart('${p.id}')" class="bg-ice-100 hover:bg-navy-deep hover:text-white text-navy-deep w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition shadow-sm" title="加入選購清單">
-                        <i class="fa-solid fa-plus text-xs"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
+            document.getElementById('product-count-label').textContent = `共 ${filtered.length} 款`;
 
-    renderTopSalesRanking();
-}
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate/50 bg-white rounded-3xl border border-ice-200">未找到符合條件的湛藍飾品</div>`;
+            } else {
+                grid.innerHTML = filtered.map(p => {
+                    const tagBadges = getProductTags(p).slice(0, 3).map(tag =>
+                        `<span class="bg-ice-50 text-dusty-blue border border-ice-200 text-[9px] px-2 py-0.5 rounded-full">${escapeHTML(tag)}</span>`
+                    ).join('');
+
+                    return `
+                        <div class="product-card bg-white rounded-3xl border border-ice-200 overflow-hidden shadow-sm flex flex-col justify-between p-3.5 sm:p-4 group">
+                            <div>
+                                <div class="relative overflow-hidden rounded-2xl mb-3 cursor-pointer bg-ice-50" onclick="openProductModal('${p.id}')">
+                                    <img src="${p.image}" alt="${p.title}" onerror="this.src='https://placehold.co/400x400/E2ECF4/102A45?text=Azure+Journal'" class="w-full h-48 sm:h-52 object-cover group-hover:scale-105 transition duration-500">
+                                    <span class="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur text-navy-deep text-[10px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full shadow-sm border border-ice-200">${p.badge || '精選'}</span>
+                                </div>
+                                <h4 class="font-serif font-bold text-slate text-xs sm:text-sm mt-1 mb-1 line-clamp-1 hover:text-navy-deep cursor-pointer" onclick="openProductModal('${p.id}')">${p.title}</h4>
+                                <p class="text-[11px] text-slate/60 mb-2 truncate font-light">${p.material}</p>
+                                <div class="flex flex-wrap gap-1.5">${tagBadges}</div>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 pt-3 border-t border-ice-100">
+                                <div>
+                                    <span class="text-navy-deep font-serif font-bold text-base sm:text-lg">$${p.price}</span>
+                                    <span class="text-slate/40 text-xs line-through ml-1">$${p.originalPrice}</span>
+                                </div>
+                                <button onclick="addToCart('${p.id}')" class="bg-ice-100 hover:bg-navy-deep hover:text-white text-navy-deep w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition shadow-sm" title="加入選購清單">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderTopSalesRanking();
+        }
 
         // 渲染 TOP 5 熱銷榜與 Chart.js
         function renderTopSalesRanking() {
@@ -1629,6 +1730,9 @@ function renderStore() {
             document.getElementById('modal-rating-text').textContent = p.rating || "4.9";
             document.getElementById('modal-sales').textContent = `已售出 ${p.sales} 件`;
             document.getElementById('modal-category').textContent = p.category;
+            document.getElementById('modal-product-tags').innerHTML = getProductTags(p).map(tag =>
+                `<span class="bg-white text-dusty-blue border border-ice-200 text-[10px] px-2 py-0.5 rounded-full">${escapeHTML(tag)}</span>`
+            ).join('');
             document.getElementById('modal-qty-input').value = 1;
 
             let starsHtml = '';
@@ -2171,6 +2275,10 @@ function renderStore() {
                 image: document.getElementById('new-prod-image').value,
                 material: "精選優質冰藍飾品材質",
                 badge: "全新上架",
+                tags: [...new Set(document.getElementById('new-prod-tags').value
+                    .split(/[,，、]/)
+                    .map(tag => tag.trim())
+                    .filter(Boolean))],
                 isOnline: true
             };
             state.products.unshift(newProduct);
