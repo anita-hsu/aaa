@@ -202,6 +202,7 @@
                 <button onclick="filterCategory('髮飾')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="髮飾">髮飾 / 配件</button>
                 <button onclick="filterCategory('戒指')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="戒指">戒指 / 情侶戒</button>
                 <button onclick="filterCategory('手鍊')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="手鍊">手鍊 / 手環</button>
+                <button onclick="filterCategory('promotions')" class="cat-btn shrink-0 hover:text-navy-deep transition font-medium border-b-2 border-transparent pb-0.5 text-slate/70" data-cat="promotions"><i class="fa-solid fa-tags mr-1"></i>優惠專區</button>
 
                 <button onclick="resetDataDemo()" class="ml-auto shrink-0 text-[11px] text-ice-600 hover:text-navy-deep transition underline flex items-center gap-1">
                     <i class="fa-solid fa-rotate-left"></i> 重置模擬資料
@@ -316,9 +317,9 @@
             <div class="bg-white p-5 sm:p-6 rounded-3xl border border-ice-200 shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-navy-deep">
                 <div>
                     <h2 class="text-lg sm:text-xl font-serif font-bold text-slate flex items-center gap-2">
-                        <i class="fa-solid fa-store text-dusty-blue"></i> 商家後台與 ABC 庫存管控系統
+                        <i class="fa-solid fa-store text-dusty-blue"></i> 商家後台與 ABC 銷售分析
                     </h2>
-                    <p class="text-xs text-slate/70 mt-1">即時修改品名/圖片/售價/庫存，並運用 ABC 分析法精準掌握資金佔比。</p>
+                    <p class="text-xs text-slate/70 mt-1">依商品累積售出金額分類；A 類維持原價，B / C 類套用促銷策略。</p>
                 </div>
                 <div class="flex gap-2.5 w-full sm:w-auto">
                     <button onclick="openAddProductModal()" class="flex-1 sm:flex-none bg-navy-deep hover:bg-dusty-blue text-white text-xs px-4 py-2.5 rounded-full transition shadow-sm font-medium flex items-center justify-center gap-1.5">
@@ -336,6 +337,7 @@
                     <div>
                         <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">總銷售額 (GMV)</div>
                         <div id="stat-gmv" class="text-2xl font-serif font-bold text-navy-deep mt-1 rounded">$0</div>
+                        <div id="stat-gmv-demo" class="text-[10px] text-slate/60 mt-1">示範訂單金額：$0</div>
                     </div>
                     <div class="bg-ice-100 text-navy-deep p-3.5 rounded-2xl text-base shrink-0"><i class="fa-solid fa-sack-dollar text-dusty-blue"></i></div>
                 </div>
@@ -358,8 +360,8 @@
 
                 <div class="bg-white p-5 rounded-3xl border border-ice-200 shadow-sm flex items-center justify-between">
                     <div>
-                        <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">庫存總價值</div>
-                        <div id="stat-total-stock-value" class="text-2xl font-serif font-bold text-emerald-700 mt-1">$0</div>
+                        <div class="text-[11px] font-bold text-slate/60 uppercase tracking-wider">累積售出金額</div>
+                        <div id="stat-total-sales-value" class="text-2xl font-serif font-bold text-emerald-700 mt-1">$0</div>
                     </div>
                     <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-2xl text-base shrink-0"><i class="fa-solid fa-vault"></i></div>
                 </div>
@@ -370,9 +372,9 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 border-b border-ice-100 pb-3">
                     <div>
                         <h3 class="font-serif font-bold text-navy-deep text-base flex items-center gap-2">
-                            <i class="fa-solid fa-chart-pie text-dusty-blue"></i> ABC 庫存資金佔比分析 (ABC Inventory Analysis)
+                            <i class="fa-solid fa-chart-pie text-dusty-blue"></i> ABC 已售出金額佔比分析
                         </h3>
-                        <p class="text-xs text-slate/60 mt-0.5">依據「單價 × 現有庫存」計算總資金佔比進行重度/常規/簡化管制</p>
+                        <p class="text-xs text-slate/60 mt-0.5">依各商品累積售出金額佔所有商品售出金額的比例分類；未售出商品列為 C 類。</p>
                     </div>
                 </div>
 
@@ -381,28 +383,28 @@
                         <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl">
                             <div class="font-bold text-rose-800 flex items-center gap-1">
                                 <span class="bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0">A</span>
-                                類品項 (高價值/重點控管)
+                                類品項（少數品項／高售出金額）
                             </div>
-                            <p class="text-[11px] text-rose-700/80 mt-1.5">佔資金約 70%。需每日監控庫存、防止積壓缺貨。</p>
-                            <div id="abc-a-stat" class="font-serif font-bold text-rose-900 text-base mt-2">0 件 ($0)</div>
+                            <p class="text-[11px] text-rose-700/80 mt-1.5">約 20% 品項、70% 年度售出金額。重點管理、頻繁盤點、精準預測；維持原價。</p>
+                            <div id="abc-a-stat" class="font-serif font-bold text-rose-900 text-base mt-2">0 款 ($0)</div>
                         </div>
 
                         <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
                             <div class="font-bold text-amber-800 flex items-center gap-1">
                                 <span class="bg-amber-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0">B</span>
-                                類品項 (中價值/常規控管)
+                                類品項（中間級距）
                             </div>
-                            <p class="text-[11px] text-amber-700/80 mt-1.5">佔資金約 20%。維持常規訂購與每週安全庫存檢視。</p>
-                            <div id="abc-b-stat" class="font-serif font-bold text-amber-900 text-base mt-2">0 件 ($0)</div>
+                            <p class="text-[11px] text-amber-700/80 mt-1.5">約 30% 品項、25% 年度售出金額。定期檢視、一般管理；提供促銷價格。</p>
+                            <div id="abc-b-stat" class="font-serif font-bold text-amber-900 text-base mt-2">0 款 ($0)</div>
                         </div>
 
                         <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
                             <div class="font-bold text-slate-800 flex items-center gap-1">
                                 <span class="bg-slate-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0">C</span>
-                                類品項 (低價值/簡化控管)
+                                類品項（多數品項／低售出金額）
                             </div>
-                            <p class="text-[11px] text-slate-600 mt-1.5">佔資金約 10%（品項多）。採大批採購、簡化盤點。</p>
-                            <div id="abc-c-stat" class="font-serif font-bold text-slate-900 text-base mt-2">0 件 ($0)</div>
+                            <p class="text-[11px] text-slate-600 mt-1.5">約 50% 品項、5% 年度售出金額。簡化流程、降低管理成本；搭配 C 類優惠。</p>
+                            <div id="abc-c-stat" class="font-serif font-bold text-slate-900 text-base mt-2">0 款 ($0)</div>
                         </div>
                     </div>
 
@@ -416,7 +418,7 @@
             <div class="bg-white rounded-3xl shadow-sm border border-ice-200 overflow-hidden mb-8">
                 <div class="bg-ice-50 border-b border-ice-200 flex overflow-x-auto">
                     <button onclick="switchAdminTab('inventory')" id="tab-btn-inventory" class="px-5 sm:px-6 py-3.5 text-xs font-bold border-b-2 border-navy-deep text-navy-deep transition shrink-0">
-                        <i class="fa-solid fa-boxes-stacked mr-1.5"></i> 商品編輯與 ABC 庫存管理
+                        <i class="fa-solid fa-boxes-stacked mr-1.5"></i> 商品編輯與 ABC 分類
                     </button>
                     <button onclick="switchAdminTab('orders')" id="tab-btn-orders" class="px-5 sm:px-6 py-3.5 text-xs font-bold text-slate/60 hover:text-navy-deep border-b-2 border-transparent transition shrink-0">
                         <i class="fa-solid fa-list-check mr-1.5"></i> 銷售紀錄與訂單狀態
@@ -450,7 +452,7 @@
                                     <th class="p-3">ABC 分類</th>
                                     <th class="p-3">售價 ($)</th>
                                     <th class="p-3">庫存</th>
-                                    <th class="p-3">庫存總價值</th>
+                                    <th class="p-3">累積售出金額</th>
                                     <th class="p-3">銷量</th>
                                     <th class="p-3">狀態</th>
                                     <th class="p-3 text-center">操作</th>
@@ -626,6 +628,7 @@
                 <div class="bg-ice-50 p-4 rounded-2xl border border-ice-200 space-y-2.5">
                     <div class="font-bold text-navy-deep mb-1 flex items-center gap-1.5"><i class="fa-solid fa-box-archive text-dusty-blue"></i> 訂單明細摘要</div>
                     <div id="checkout-items-summary" class="space-y-1.5 text-slate max-h-32 overflow-y-auto pr-1"></div>
+                    <div id="checkout-freebies-summary" class="space-y-1.5 text-emerald-700"></div>
                     <div class="border-t border-ice-200 pt-2.5 space-y-1.5 text-slate">
                         <div class="flex justify-between"><span>商品小計：</span><span id="co-subtotal">$0</span></div>
                         <div class="flex justify-between text-navy-deep font-medium"><span id="co-discount-label">滿千折百優惠：</span><span id="co-discount">-$0</span></div>
@@ -634,6 +637,12 @@
                             <span>應付總金額：</span><span id="co-total" class="text-dusty-blue text-base">$0</span>
                         </div>
                     </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-ice-200">
+                    <label for="checkout-gift-select" class="block font-bold text-navy-deep mb-1.5"><i class="fa-solid fa-gift text-dusty-blue mr-1"></i> C 類滿額贈品</label>
+                    <p id="checkout-gift-hint" class="text-[11px] text-slate/60 mb-2">商品小計達指定門檻後，可在此挑選一件 C 類商品。</p>
+                    <select id="checkout-gift-select" onchange="selectedGiftId = this.value || null; updateCheckoutTotals();" class="w-full border border-ice-200 rounded-xl px-3 py-2.5 bg-ice-50/50 text-xs focus:outline-none focus:border-dusty-blue"></select>
                 </div>
 
                 <div class="bg-white p-4 rounded-2xl border border-ice-200">
@@ -840,7 +849,7 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // 預設飾品資料 (包含使用者指定的 12 款新品 + 經典款)
+        // 預設 25 款飾品；sales 為年度售出件數基準，售出金額約按 A/B/C 70%/25%/5% 配置。
         const DEFAULT_PRODUCTS = [
             // --- 耳環類 (4款指定商品) ---
             {
@@ -849,7 +858,7 @@
                 category: "耳環",
                 price: 680,
                 originalPrice: 980,
-                sales: 245,
+                sales: 460,
                 stock: 25,
                 rating: 4.9,
                 image: "https://tse4.mm.bing.net/th/id/OIP.OSrTJ-NO8x4DkAq5mC_JGAHaHa?r=0&pid=Api&h=220&P=0",
@@ -863,7 +872,7 @@
                 category: "耳環",
                 price: 720,
                 originalPrice: 1050,
-                sales: 310,
+                sales: 1944,
                 stock: 18,
                 rating: 5.0,
                 image: "https://tse2.mm.bing.net/th/id/OIP.W80uzCYuamqi151yTTeGOgHaHa?r=0&pid=Api&h=220&P=0",
@@ -877,7 +886,7 @@
                 category: "耳環",
                 price: 780,
                 originalPrice: 1120,
-                sales: 185,
+                sales: 401,
                 stock: 14,
                 rating: 4.8,
                 image: "https://tse1.mm.bing.net/th/id/OIP.uyqdpYMu7uN6U7X-q7BBTgHaHa?r=0&pid=Api&h=220&P=0",
@@ -891,7 +900,7 @@
                 category: "耳環",
                 price: 590,
                 originalPrice: 850,
-                sales: 160,
+                sales: 71,
                 stock: 30,
                 rating: 4.7,
                 image: "https://tse4.mm.bing.net/th/id/OIP.gxQWG2OkaH2MH7Udr15OSAHaHa?r=0&pid=Api&h=220&P=0",
@@ -905,7 +914,7 @@
                 category: "耳環",
                 price: 790,
                 originalPrice: 1050,
-                sales: 120,
+                sales: 53,
                 stock: 30,
                 rating: 4.6,
                 image: "https://tse4.mm.bing.net/th/id/OIP.bPA_WW7FjYpRXTHnvtN9cAHaHa?r=0&pid=Api&h=220&P=0",
@@ -921,7 +930,7 @@
                 category: "項鍊",
                 price: 980,
                 originalPrice: 1380,
-                sales: 340,
+                sales: 1429,
                 stock: 12,
                 rating: 4.9,
                 image: "https://tse4.mm.bing.net/th/id/OIP.dl1Uzn2hbLXH_cHY3_UHVgHaHa?r=0&pid=Api&h=220&P=0",
@@ -935,7 +944,7 @@
                 category: "項鍊",
                 price: 1150,
                 originalPrice: 1580,
-                sales: 215,
+                sales: 1217,
                 stock: 10,
                 rating: 4.9,
                 image: "https://tse3.mm.bing.net/th/id/OIP.psiKMFDcvytF8_pvtHB0pQHaHa?r=0&pid=Api&h=220&P=0",
@@ -949,7 +958,7 @@
                 category: "項鍊",
                 price: 850,
                 originalPrice: 1200,
-                sales: 175,
+                sales: 368,
                 stock: 22,
                 rating: 4.8,
                 image: "https://tse2.mm.bing.net/th/id/OIP.hTf5xdqY7B_3k_z8_0uu-AHaHa?r=0&pid=Api&h=220&P=0",
@@ -963,7 +972,7 @@
                 category: "項鍊",
                 price: 750,
                 originalPrice: 1300,
-                sales: 155,
+                sales: 417,
                 stock: 24,
                 rating: 4.9,
                 image: "https://tse2.mm.bing.net/th/id/OIP.5DAXleh8TnF9dnF0R3K-EAHaHa?r=0&pid=Api&h=220&P=0",
@@ -977,7 +986,7 @@
                 category: "項鍊",
                 price: 1900,
                 originalPrice: 3000,
-                sales: 155,
+                sales: 737,
                 stock: 24,
                 rating: 4.9,
                 image: "https://tse4.mm.bing.net/th/id/OIP.RMawGFMgaYrZOtuouHqYPAHaHa?r=0&pid=Api&h=220&P=0",
@@ -994,7 +1003,7 @@
                 category: "髮飾",
                 price: 360,
                 originalPrice: 520,
-                sales: 290,
+                sales: 116,
                 stock: 40,
                 rating: 4.8,
                 image: "https://tse3.mm.bing.net/th/id/OIP.W5XHVoBiif6wgXyjffWtlQHaHa?r=0&pid=Api&h=220&P=0",
@@ -1008,7 +1017,7 @@
                 category: "髮飾",
                 price: 450,
                 originalPrice: 650,
-                sales: 195,
+                sales: 93,
                 stock: 28,
                 rating: 4.9,
                 image: "https://tse4.mm.bing.net/th/id/OIP.l2hRkStR15NqNU-2MrUOnwHaHa?r=0&pid=Api&h=220&P=0",
@@ -1022,7 +1031,7 @@
                 category: "髮飾",
                 price: 280,
                 originalPrice: 420,
-                sales: 380,
+                sales: 149,
                 stock: 50,
                 rating: 4.7,
                 image: "https://tse3.mm.bing.net/th/id/OIP.UMSpf3uAkeb4-XnDSAlLhAHaHa?r=0&pid=Api&h=220&P=0",
@@ -1036,7 +1045,7 @@
                 category: "髮飾",
                 price: 480,
                 originalPrice: 680,
-                sales: 160,
+                sales: 87,
                 stock: 20,
                 rating: 4.9,
                 image: "https://img.alicdn.com/imgextra/i1/2216468373823/O1CN01uMAsMR1e6zHuaHonr_!!4611686018427380031-2-item_pic.png",
@@ -1050,7 +1059,7 @@
                 category: "髮飾",
                 price: 390,
                 originalPrice: 580,
-                sales: 140,
+                sales: 107,
                 stock: 25,
                 rating: 4.8,
                 image: "https://tse2.mm.bing.net/th/id/OIP.a3nCciTvDVZ6ifW3TFEeNQHaHa?r=0&pid=Api&h=220&P=0",
@@ -1065,7 +1074,7 @@
     category: "戒指",
     price: 1400,
     originalPrice: 1800,
-    sales: 150,
+    sales: 223,
     stock: 12,
     rating: 4.9,
     image: "https://tse3.mm.bing.net/th/id/OIP.NvlalYF6t4g4BKdYnW1bSQHaJ4?r=0&pid=Api&h=220&P=0",
@@ -1079,7 +1088,7 @@
     category: "戒指",
     price: 1280,
     originalPrice: 1600,
-    sales: 98,
+    sales: 244,
     stock: 8,
     rating: 4.8,
     image: "https://tse1.mm.bing.net/th/id/OIP.iIzI6m75hAeL4kvWsuHRGQHaHa?r=0&pid=Api&h=220&P=0",
@@ -1093,7 +1102,7 @@
     category: "戒指",
     price: 890,
     originalPrice: 1200,
-    sales: 210,
+    sales: 351,
     stock: 20,
     rating: 4.7,
     image: "https://tse2.mm.bing.net/th/id/OIP.-n39Kk2FiAeIpg8-0-aR_AHaHa?r=0&pid=Api&h=220&P=0",
@@ -1107,7 +1116,7 @@
         category: "戒指",
         price: 1080,
         originalPrice: 1450,
-        sales: 86,
+        sales: 39,
         stock: 16,
         rating: 4.9,
         image: "https://tse2.mm.bing.net/th/id/OIP.H22pfVTkZF1E5Ws01sIMvQHaHa?r=0&pid=Api&h=220&P=0",
@@ -1121,7 +1130,7 @@
         category: "戒指",
         price: 1380,
         originalPrice: 1950,
-        sales: 76,
+        sales: 30,
         stock: 18,
         rating: 4.9,
         image: "https://tse2.mm.bing.net/th/id/OIP.e7EGZPFqudNH5AeSLCCo_AHaHa?r=0&pid=Api&h=220&P=0",
@@ -1138,7 +1147,7 @@
     category: "手鍊",
     price: 1199,
     originalPrice: 1580,
-    sales: 180,
+    sales: 1168,
     stock: 15,
     rating: 4.9,
     image: "https://tse3.mm.bing.net/th/id/OIP.NZ0u5hPEch1R13HiYjjlxwHaHa?r=0&pid=Api&h=220&P=0",
@@ -1152,7 +1161,7 @@
     category: "手鍊",
     price: 1299,
     originalPrice: 1680,
-    sales: 135,
+    sales: 241,
     stock: 10,
     rating: 5.0,
     image: "https://tse3.mm.bing.net/th/id/OIP.5kaJ6KduHvHv52fJWGrIpwHaHa?r=0&pid=Api&h=220&P=0",
@@ -1166,7 +1175,7 @@
     category: "手鍊",
     price: 1050,
     originalPrice: 1400,
-    sales: 90,
+    sales: 40,
     stock: 18,
     rating: 4.8,
     image: "https://tse1.mm.bing.net/th/id/OIP.OUkzD0EjvwZRKnJxqIcWyAHaHa?r=0&pid=Api&h=220&P=0",
@@ -1180,7 +1189,7 @@
         category: "手環",
         price: 1380,
         originalPrice: 1780,
-        sales: 72,
+        sales: 30,
         stock: 14,
         rating: 4.9,
         image: "https://tse2.mm.bing.net/th/id/OIP.9SOGCOsAQBGdR8wOJiukcgHaHa?r=0&pid=Api&h=220&P=0",
@@ -1194,7 +1203,7 @@
         category: "手環",
         price: 1380,
         originalPrice: 1780,
-        sales: 72,
+        sales: 30,
         stock: 14,
         rating: 4.9,
         image: "https://tse3.mm.bing.net/th/id/OIP.Z-UM6zUv357cm56BCxadAwHaHa?r=0&pid=Api&h=220&P=0",
@@ -1339,7 +1348,8 @@
                 '項鍊': '項鍊 / 鎖骨鍊系列',
                 '髮飾': '髮飾 / 配件系列',
                 '戒指': '戒指 / 情侶戒系列',
-                '手鍊': '手鍊 / 手環系列'
+                '手鍊': '手鍊 / 手環系列',
+                'promotions': '優惠專區'
             };
             document.getElementById('category-title').textContent = titles[cat] || '飾品專區';
             renderStore();
@@ -1462,10 +1472,13 @@
             const grid = document.getElementById('products-grid');
             renderPreferenceTags();
             const filtered = state.products.filter(p => {
-                const matchesCat = (state.currentCategory === 'all') ||
+                const matchesCat = state.currentCategory === 'all' ||
+                    (state.currentCategory === 'promotions'
+                        ? getSalePrice(p) < p.price || memo().bogo.includes(p.id)
+                        : (
                     p.category.includes(state.currentCategory) ||
                     state.currentCategory.includes(p.category) ||
-                    (state.currentCategory === '手鍊' && p.category === '手環');
+                    (state.currentCategory === '手鍊' && p.category === '手環')));
                 const matchesSearch = p.title.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
                     p.material.toLowerCase().includes(state.searchQuery.toLowerCase());
                 const matchesTags = state.selectedTags.length === 0 ||
@@ -1473,6 +1486,8 @@
 
                 return p.isOnline && matchesCat && matchesSearch && matchesTags;
             });
+            const promotionCenter = document.getElementById('promotion-center');
+            if (promotionCenter) promotionCenter.classList.toggle('hidden', state.currentCategory !== 'promotions');
 
             document.getElementById('product-count-label').textContent = `共 ${filtered.length} 款`;
 
@@ -2098,12 +2113,14 @@
             const { abcMap, grandTotalValue } = calculateABCClassification();
 
             const totalGMV = state.orders.reduce((sum, o) => sum + o.total, 0);
+            const demoGMV = state.orders.reduce((sum, o) => sum + (o.isDemo ? o.total : 0), 0);
             const aov = state.orders.length > 0 ? Math.round(totalGMV / state.orders.length) : 0;
 
             document.getElementById('stat-gmv').textContent = `$${totalGMV.toLocaleString()}`;
+            document.getElementById('stat-gmv-demo').textContent = `含示範訂單 $${demoGMV.toLocaleString()}（非實際交易）`;
             document.getElementById('stat-orders-count').textContent = `${state.orders.length} 筆`;
             document.getElementById('stat-aov').textContent = `$${aov.toLocaleString()}`;
-            document.getElementById('stat-total-stock-value').textContent = `$${grandTotalValue.toLocaleString()}`;
+            document.getElementById('stat-total-sales-value').textContent = `$${grandTotalValue.toLocaleString()}`;
 
             let countA = 0, valA = 0;
             let countB = 0, valB = 0;
@@ -2115,9 +2132,10 @@
                 if (item.category === 'C') { countC++; valC += item.totalValue; }
             });
 
-            document.getElementById('abc-a-stat').textContent = `${countA} 件 ($${valA.toLocaleString()})`;
-            document.getElementById('abc-b-stat').textContent = `${countB} 件 ($${valB.toLocaleString()})`;
-            document.getElementById('abc-c-stat').textContent = `${countC} 件 ($${valC.toLocaleString()})`;
+            const share = value => grandTotalValue > 0 ? `${(value / grandTotalValue * 100).toFixed(1)}%` : '0.0%';
+            document.getElementById('abc-a-stat').textContent = `${countA} 款 ($${valA.toLocaleString()} / ${share(valA)})`;
+            document.getElementById('abc-b-stat').textContent = `${countB} 款 ($${valB.toLocaleString()} / ${share(valB)})`;
+            document.getElementById('abc-c-stat').textContent = `${countC} 款 ($${valC.toLocaleString()} / ${share(valC)})`;
 
             const pieCtx = document.getElementById('abcPieChart').getContext('2d');
             if (abcPieChartInstance) abcPieChartInstance.destroy();
@@ -2125,7 +2143,7 @@
             abcPieChartInstance = new Chart(pieCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['A 類 (高價值70%)', 'B 類 (中價值20%)', 'C 類 (低價值10%)'],
+                    labels: ['A 類售出金額', 'B 類售出金額', 'C 類售出金額'],
                     datasets: [{
                         data: [valA, valB, valC],
                         backgroundColor: ['#E11D48', '#F59E0B', '#64748B']
@@ -2148,7 +2166,7 @@
             });
 
             invTbody.innerHTML = adminProducts.length ? adminProducts.map(p => {
-                const abcInfo = abcMap[p.id] || { category: 'C', totalValue: p.price * p.stock };
+                const abcInfo = abcMap[p.id] || { category: 'C', totalValue: getRevenue(p) };
                 
                 let abcBadgeClass = "bg-slate-100 text-slate-700";
                 if (abcInfo.category === 'A') abcBadgeClass = "bg-rose-100 text-rose-700 font-bold border border-rose-200";
@@ -2199,7 +2217,7 @@
             } else {
                 ordersTbody.innerHTML = state.orders.map(o => `
                     <tr class="hover:bg-ice-50/50 transition border-b border-ice-100">
-                        <td class="p-3.5 font-mono font-bold text-navy-deep">${o.id}</td>
+                        <td class="p-3.5 font-mono font-bold text-navy-deep">${o.id}${o.isDemo ? `<div class="mt-1 text-[10px] font-sans font-bold text-amber-700">示範資料・非實際交易</div>` : ''}</td>
                         <td class="p-3.5 font-medium text-slate">${o.customer}</td>
                         <td class="p-3.5 text-slate/80 max-w-xs truncate">${o.itemsSummary}</td>
                         <td class="p-3.5"><span class="bg-ice-100 text-navy-deep px-2 py-0.5 rounded text-[11px] font-bold">${o.payment}</span></td>
@@ -2342,15 +2360,44 @@ const BASE_PRODUCTS = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
 function getRevenue(p) { return typeof p.revenue === 'number' ? p.revenue : p.price * p.sales; }
 state.products.forEach(p => { if (typeof p.revenue !== 'number') p.revenue = p.price * p.sales; });
 
+const ABC_SAMPLE_DATA_KEY = 'azure_abc_sample_v1';
+if (!localStorage.getItem(ABC_SAMPLE_DATA_KEY)) {
+    const actualOrders = state.orders.filter(order => !order.isDemo && !String(order.id || '').startsWith('ORD-S'));
+    const actualSales = {};
+    actualOrders.forEach(order => (Array.isArray(order.items) ? order.items : []).forEach(item => {
+        const qty = Math.max(0, Number(item.qty) || 0);
+        if (!qty || !item.id) return;
+        if (!actualSales[item.id]) actualSales[item.id] = { qty: 0, revenue: 0 };
+        actualSales[item.id].qty += qty;
+        actualSales[item.id].revenue += Math.max(0, Number(item.unitPrice) || 0) * qty;
+    }));
+
+    const defaultById = new Map(BASE_PRODUCTS.map(product => [product.id, product]));
+    state.products = state.products.map(product => {
+        const defaultProduct = defaultById.get(product.id);
+        if (!defaultProduct) return product;
+        const history = actualSales[product.id] || { qty: 0, revenue: 0 };
+        return {
+            ...product,
+            sales: defaultProduct.sales + history.qty,
+            revenue: product.price * defaultProduct.sales + history.revenue
+        };
+    });
+    state.orders = actualOrders;
+    localStorage.setItem(ABC_SAMPLE_DATA_KEY, '1');
+    persistData();
+}
+
 function calculateABCClassification() {
-    const sorted = state.products.map(p => ({ id: p.id, totalValue: getRevenue(p) }))
+    const sorted = state.products.map(p => ({ id: p.id, totalValue: Math.max(0, getRevenue(p)) }))
         .sort((a, b) => b.totalValue - a.totalValue);
     const grandTotalValue = sorted.reduce((s, x) => s + x.totalValue, 0);
-    let cum = 0; const abcMap = {};
-    sorted.forEach(x => {
-        const prev = grandTotalValue > 0 ? cum / grandTotalValue : 0;   // 累積佔比未達 70% 前的品項都算 A
-        cum += x.totalValue;
-        abcMap[x.id] = { category: prev < 0.7 ? 'A' : prev < 0.9 ? 'B' : 'C', totalValue: x.totalValue };
+    const aCount = Math.round(sorted.length * 0.2);
+    const bCount = Math.round(sorted.length * 0.3);
+    const abcMap = {};
+    sorted.forEach((product, index) => {
+        const category = index < aCount ? 'A' : index < aCount + bCount ? 'B' : 'C';
+        abcMap[product.id] = { category, totalValue: product.totalValue };
     });
     return { abcMap, grandTotalValue };
 }
@@ -2362,7 +2409,6 @@ function generateSeedOrders() {
         t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
     const pool = BASE_PRODUCTS, totalW = pool.reduce((s, p) => s + p.sales, 0);
     const pick = () => { let r = rnd() * totalW; for (const p of pool) { r -= p.sales; if (r <= 0) return p; } return pool[0]; };
-    const names = ['林','陳','黃','張','李','王','吳','劉','蔡','楊'], given = ['怡君','雅婷','佩珊','詩涵','欣妤','雨彤','佳穎','語嫣'];
     const pays = ['信用卡線上支付', 'LINE Pay', '超商取貨付款'];
     const start = new Date('2026-01-01').getTime(), now = Date.now();
     const out = []; let gmv = 0;
@@ -2378,30 +2424,54 @@ function generateSeedOrders() {
         const ts = start + rnd() * (now - start), age = (now - ts) / 864e5;
         gmv += total;
         out.push({
-            id: `ORD-S${String(out.length + 1).padStart(4, '0')}`, userEmail: `demo${out.length % 40}@example.com`,
-            customer: `${names[Math.floor(rnd() * 10)]}${given[Math.floor(rnd() * 8)]} (09${String(10000000 + Math.floor(rnd() * 89999999))})`,
-            address: '7-11 示範門市', itemsSummary: items.map(l => `${l.p.title} x${l.qty}`).join(', '),
+            id: `ORD-S${String(out.length + 1).padStart(4, '0')}`, isDemo: true,
+            userEmail: `demo${out.length % 40}@example.com`,
+            customer: `示範顧客 ${String(out.length + 1).padStart(3, '0')}`,
+            address: '示範資料（非實際交易）',
+            items: items.map(l => ({ id: l.p.id, title: l.p.title, qty: l.qty, unitPrice: l.p.price })),
+            itemsSummary: items.map(l => `${l.p.title} x${l.qty}`).join(', '),
             payment: pays[Math.floor(rnd() * 3)], discount, couponCode: null, shippingFee: ship ? `$${ship}` : '免運 ($0)',
             total, status: age > 14 ? '已完成' : age > 5 ? '已出貨' : '處理中', _ts: ts, date: new Date(ts).toLocaleString()
         });
     }
     return out.sort((x, y) => y._ts - x._ts);
 }
-if (!localStorage.getItem('azure_v5_seeded')) {
-    state.orders = [...state.orders, ...generateSeedOrders()];
-    localStorage.setItem('azure_v5_seeded', '1');
+
+function applyDemoSales(orders) {
+    orders.forEach(order => (order.items || []).forEach(item => {
+        const product = state.products.find(p => p.id === item.id);
+        const qty = Number(item.qty) || 0;
+        const unitPrice = Number(item.unitPrice) || 0;
+        if (!product || qty <= 0) return;
+        if (typeof product.revenue !== 'number') product.revenue = product.price * product.sales;
+        product.revenue += unitPrice * qty;
+        product.sales += qty;
+    }));
+}
+
+const DEMO_SEED_KEY = 'azure_v7_demo_seeded';
+if (!localStorage.getItem(DEMO_SEED_KEY)) {
+    state.orders = state.orders.filter(order => !order.isDemo && !String(order.id || '').startsWith('ORD-S'));
+    const demoOrders = generateSeedOrders();
+    applyDemoSales(demoOrders);
+    state.orders = [...state.orders, ...demoOrders];
+    localStorage.setItem(DEMO_SEED_KEY, '1');
     persistData();
 }
 function resetDataDemo() {
     if (!confirm('確定要重置商品、訂單與購物車為預設資料嗎？')) return;
     state.products = JSON.parse(JSON.stringify(BASE_PRODUCTS));
     state.products.forEach(p => p.revenue = p.price * p.sales);
-    state.cart = []; state.orders = generateSeedOrders();
+    state.cart = []; selectedGiftId = null;
+    state.orders = generateSeedOrders();
+    applyDemoSales(state.orders);
+    localStorage.setItem(DEMO_SEED_KEY, '1');
     persistData(); renderStore(); updateCartUI(); renderAdmin(); showToast('模擬資料已重置！');
 }
 
 /* ---- 3. 依 ABC 的行銷策略 ---- */
 let _memo = null;
+let selectedGiftId = null;
 const _persist = persistData;
 persistData = function () { _memo = null; _persist(); };
 function memo() {
@@ -2441,16 +2511,18 @@ function computeTotals() {
         if (free > 0) bogo.push({ id: i.id, title: i.title, qty: free });
     });
 
-    let gift = null;
+    let giftOptions = [];
     if (PROMO.gift.on && afterC >= PROMO.gift.threshold) {
         const used = id => (lines.find(l => l.id === id)?.qty || 0) + (bogo.find(b => b.id === id)?.qty || 0);
-        gift = state.products.filter(p => p.isOnline && abcOf(p.id) === 'C' && p.stock - used(p.id) >= 1)
-            .sort((x, y) => y.stock - x.stock)[0] || null;
+        giftOptions = state.products.filter(p => p.isOnline && abcOf(p.id) === 'C' && p.stock - used(p.id) >= 1)
+            .sort((x, y) => y.stock - x.stock);
     }
+    const gift = giftOptions.find(p => p.id === selectedGiftId) || null;
+    if (!gift) selectedGiftId = null;
     const baseDiscount = appliedGameCoupon ? Math.min(afterC, appliedGameCoupon.discount) : afterC >= 1000 ? 100 : 0;
     const shipping = afterC >= 499 ? 0 : (afterC > 0 ? 60 : 0);
     const total = Math.max(0, afterC - baseDiscount + shipping);
-    return { subtotal, cDiscount, afterC, bogo, gift, baseDiscount, shipping, total };
+    return { subtotal, cDiscount, afterC, bogo, gift, giftOptions, baseDiscount, shipping, total };
 }
 
 function renderPromoLines(id, t) {
@@ -2459,6 +2531,8 @@ function renderPromoLines(id, t) {
     if (t.cDiscount > 0) rows.push(`<div class="flex justify-between text-navy-deep font-medium"><span>C類商品滿 $${PROMO.cDiscount.threshold} 再享 ${PROMO.cDiscount.pct * 10} 折：</span><span>-$${t.cDiscount}</span></div>`);
     t.bogo.forEach(b => rows.push(`<div class="flex justify-between text-emerald-700"><span class="truncate pr-2">買一送一：${escapeHTML(b.title)}</span><span class="shrink-0">贈 ×${b.qty}</span></div>`));
     if (t.gift) rows.push(`<div class="flex justify-between text-emerald-700"><span class="truncate pr-2">滿 $${PROMO.gift.threshold} 贈：${escapeHTML(t.gift.title)}</span><span class="shrink-0">贈 ×1</span></div>`);
+    else if (PROMO.gift.on && t.afterC >= PROMO.gift.threshold && t.giftOptions.length)
+        rows.push(`<div class="text-[11px] text-slate/60">已達滿額贈門檻，請於結帳時選擇 C 類贈品</div>`);
     else if (PROMO.gift.on && t.afterC > 0 && t.afterC < PROMO.gift.threshold)
         rows.push(`<div class="text-[11px] text-slate/60">再買 $${PROMO.gift.threshold - t.afterC} 即贈 C 類精選飾品一件</div>`);
     el.innerHTML = rows.join('');
@@ -2495,6 +2569,31 @@ function updateCheckoutTotals() {
     document.getElementById('co-shipping').textContent = t.shipping === 0 ? '免運 ($0)' : `$${t.shipping}`;
     document.getElementById('co-total').textContent = `$${t.total}`;
     renderPromoLines('co-promo-lines', t);
+    renderGiftSelection(t);
+}
+
+function renderGiftSelection(t) {
+    const select = document.getElementById('checkout-gift-select');
+    const hint = document.getElementById('checkout-gift-hint');
+    const summary = document.getElementById('checkout-freebies-summary');
+    if (!select || !hint || !summary) return;
+
+    select.innerHTML = `<option value="">不選擇贈品</option>` + t.giftOptions
+        .map(p => `<option value="${escapeHTML(p.id)}">${escapeHTML(p.title)}</option>`).join('');
+    select.value = selectedGiftId || '';
+    select.disabled = t.giftOptions.length === 0;
+
+    if (t.afterC < PROMO.gift.threshold) {
+        hint.textContent = `全單商品優惠後小計滿 $${PROMO.gift.threshold}，即可選擇一件 C 類商品。`;
+    } else if (t.giftOptions.length) {
+        hint.textContent = `已達門檻，請選擇一件贈品；也可選擇不領取。`;
+    } else {
+        hint.textContent = '已達門檻，但目前沒有可贈送的 C 類商品庫存。';
+    }
+
+    const freeItems = t.bogo.map(item => `<div class="flex justify-between text-[11px]"><span>${escapeHTML(item.title)}（買一送一）</span><span>贈 ×${item.qty}</span></div>`);
+    if (t.gift) freeItems.push(`<div class="flex justify-between text-[11px]"><span>${escapeHTML(t.gift.title)}（滿額贈）</span><span>贈 ×1</span></div>`);
+    summary.innerHTML = freeItems.join('');
 }
 
 function handleCheckoutSubmit(e) {
@@ -2514,6 +2613,14 @@ function handleCheckoutSubmit(e) {
         showToast('⚠️ 請輸入完整的 6 位數 LINE Pay 驗證碼！', 'error'); return;
     }
     const t = computeTotals(), couponCode = appliedGameCoupon ? appliedGameCoupon.code : null;
+    const unavailableItem = state.cart.find(item => {
+        const product = state.products.find(p => p.id === item.id);
+        return !product || product.stock < item.qty;
+    });
+    if (unavailableItem) {
+        showToast(`「${unavailableItem.title}」庫存不足，請調整選購數量。`, 'error');
+        return;
+    }
     const freebies = [...t.bogo.map(b => ({ id: b.id, title: b.title, qty: b.qty })),
                       ...(t.gift ? [{ id: t.gift.id, title: t.gift.title, qty: 1 }] : [])];
 
@@ -2522,12 +2629,19 @@ function handleCheckoutSubmit(e) {
         p.revenue = getRevenue(p) + i.price * i.qty;
         p.stock = Math.max(0, p.stock - i.qty); p.sales += i.qty;
     });
-    freebies.forEach(f => { const p = state.products.find(x => x.id === f.id); if (p) p.stock = Math.max(0, p.stock - f.qty); });
+    freebies.forEach(f => {
+        const p = state.products.find(x => x.id === f.id);
+        if (p) { p.stock = Math.max(0, p.stock - f.qty); p.sales += f.qty; }
+    });
 
     const order = {
-        id: `ORD-${Date.now().toString().slice(-6)}`, userEmail: state.currentUser.email,
+        id: `ORD-${Date.now().toString().slice(-6)}`, isDemo: false, userEmail: state.currentUser.email,
         customer: `${name} (${phone})`, address,
         itemsSummary: state.cart.map(c => `${c.title} x${c.qty}`).join(', ') + freebies.map(f => `, ${f.title} x${f.qty}(贈)`).join(''),
+        items: [
+            ...state.cart.map(item => ({ id: item.id, title: item.title, qty: item.qty, unitPrice: item.price })),
+            ...freebies.map(item => ({ id: item.id, title: item.title, qty: item.qty, unitPrice: 0, isGift: true }))
+        ],
         payment, discount: t.baseDiscount + t.cDiscount, couponCode,
         shippingFee: t.shipping === 0 ? '免運 ($0)' : `$${t.shipping}`, total: t.total, status: '處理中', date: new Date().toLocaleString()
     };
@@ -2537,7 +2651,7 @@ function handleCheckoutSubmit(e) {
         appliedGameCoupon = null; document.getElementById('game-coupon-input').value = '';
         setGameCouponFeedback('完成遊戲通關後，可在此輸入取得的優惠碼。');
     }
-    state.orders.unshift(order); state.cart = [];
+    state.orders.unshift(order); state.cart = []; selectedGiftId = null;
     persistData(); updateCartUI(); closeCheckoutModal(); renderStore();
     showToast(`🎉 訂單 ${order.id} 結帳成功！付款方式：${payment}`);
 }
@@ -2550,7 +2664,11 @@ renderStore = function () {
         const m = card.querySelector('button[onclick^="addToCart"]')?.getAttribute('onclick').match(/'(.+?)'/);
         const p = m && state.products.find(x => x.id === m[1]); if (!p) return;
         const sale = getSalePrice(p), old = card.querySelector('span.line-through');
-        if (old) { old.previousElementSibling.textContent = `$${sale}`; old.textContent = `$${sale < p.price ? p.price : p.originalPrice}`; }
+        if (old) {
+            old.previousElementSibling.textContent = `$${sale}`;
+            old.textContent = `$${p.price}`;
+            old.classList.toggle('hidden', sale >= p.price);
+        }
         const label = promoLabel(p), badge = card.querySelector('.absolute');
         if (label && badge) { badge.textContent = label; badge.classList.add('text-rose-600'); }
     });
@@ -2561,27 +2679,32 @@ openProductModal = function (id) {
     const p = state.products.find(x => x.id === id); if (!p) return;
     const sale = getSalePrice(p);
     document.getElementById('modal-price').textContent = `$${sale}`;
-    document.getElementById('modal-old-price').textContent = `$${sale < p.price ? p.price : p.originalPrice}`;
+    const oldPrice = document.getElementById('modal-old-price');
+    oldPrice.textContent = `$${p.price}`;
+    oldPrice.classList.toggle('hidden', sale >= p.price);
+};
+const _openCheckoutModal = openCheckoutModal;
+openCheckoutModal = function () {
+    _openCheckoutModal();
+    if (!document.getElementById('checkout-modal').classList.contains('hidden')) updateCheckoutTotals();
 };
 
-/* ---- 5. 啟動：插入容器、促銷說明、替換後台文字 ---- */
+/* ---- 5. 啟動：插入促銷專區與優惠明細 ---- */
 (function init() {
     const ins = (id, html) => { const el = document.getElementById(id)?.parentElement; if (el) el.insertAdjacentHTML('beforebegin', html); };
     ins('cart-shipping-display', '<div id="cart-promo-lines" class="space-y-1.5 text-xs"></div>');
     ins('co-shipping', '<div id="co-promo-lines" class="space-y-1.5"></div>');
     document.getElementById('preference-title')?.closest('section').insertAdjacentHTML('beforebegin', `
-        <div class="bg-white rounded-3xl border border-ice-200 shadow-sm p-5 mb-6 text-xs text-slate grid sm:grid-cols-4 gap-3">
-            <div><b class="text-navy-deep">限時促銷價</b><br>部分款式 ${PROMO.bPct * 10}～${PROMO.cPct * 10} 折</div>
-            <div><b class="text-navy-deep">買一送一</b><br>指定款式（標示於商品圖）</div>
-            <div><b class="text-navy-deep">精選滿額折</b><br>精選款小計滿 $${PROMO.cDiscount.threshold} 再 ${PROMO.cDiscount.pct * 10} 折</div>
-            <div><b class="text-navy-deep">滿額贈</b><br>全單滿 $${PROMO.gift.threshold} 贈精選飾品一件</div>
+        <section id="promotion-center" class="hidden bg-white rounded-3xl border border-ice-200 shadow-sm p-5 mb-6 text-xs text-slate">
+            <h3 class="font-serif font-bold text-navy-deep text-base mb-3"><i class="fa-solid fa-tags text-dusty-blue mr-1"></i> B / C 類優惠活動</h3>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="bg-ice-50 p-3 rounded-2xl"><b class="text-navy-deep">分類促銷價</b><br>B 類 ${PROMO.bPct * 10} 折、C 類 ${PROMO.cPct * 10} 折；A 類維持原價。</div>
+                <div class="bg-ice-50 p-3 rounded-2xl"><b class="text-navy-deep">C 類滿額折</b><br>C 類商品小計滿 $${PROMO.cDiscount.threshold}，再享 ${PROMO.cDiscount.pct * 10} 折。</div>
+                <div class="bg-ice-50 p-3 rounded-2xl"><b class="text-navy-deep">C 類買一送一</b><br>銷量最低的 ${PROMO.bogo.count} 款 C 類商品，結帳時依庫存贈送。</div>
+                <div class="bg-ice-50 p-3 rounded-2xl"><b class="text-navy-deep">C 類滿額贈</b><br>全單優惠後商品小計滿 $${PROMO.gift.threshold}，結帳時可挑選一件 C 類商品。</div>
+            </div>
+            <p class="text-[11px] text-slate/60 mt-3">點選優惠商品即可查看折扣價格；贈品需於結帳前選擇，並依實際庫存提供。</p>
         </div>`);
-    const map = { '庫存總價值': '累積售出金額', '佔資金約': '佔銷售額約',
-        '依據「單價 × 現有庫存」計算總資金佔比進行重度/常規/簡化管制': '依據「累積售出金額（售出價 × 銷量）」佔總銷售額比例分類；A 類維持原價，B/C 類啟動促銷',
-        'ABC 庫存資金佔比分析 (ABC Inventory Analysis)': 'ABC 銷售金額佔比分析 (ABC Sales Analysis)' };
-    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), nodes = [];
-    while (w.nextNode()) nodes.push(w.currentNode);
-    nodes.forEach(n => Object.entries(map).forEach(([k, v]) => { if (n.nodeValue.includes(k)) n.nodeValue = n.nodeValue.split(k).join(v); }));
     updateCartUI(); renderStore();
 })();
 </script>
