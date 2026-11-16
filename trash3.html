@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 影像辨識智慧垃圾分類系統 - 大學畢業專題展示模擬器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;600;700;800&display=swap');
+
+    body { font-family: 'Inter', sans-serif; background-color: #0B0F19; color: #E2E8F0; overflow-x: hidden; }
+    .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+
+    .glow-cyan   { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+    .glow-green  { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+
+    /* Scanline */
+    .scanline {
+      position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+      background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+      opacity: 0.8; animation: scan 2.5s linear infinite; pointer-events: none;
+    }
+    @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+    /* Radar sweep */
+    .radar-sweep {
+      background: conic-gradient(from 0deg at 50% 50%, rgba(6,182,212,0.15) 0deg, transparent 60deg, transparent 360deg);
+      animation: rotate 4s linear infinite; pointer-events: none;
+    }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* 3D lid flip */
+    .bin-body { perspective: 600px; }
+    .bin-lid { transform-origin: top center; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .bin-container.open .bin-lid { transform: rotateX(-100deg); }
+
+    .bin-container.shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    /* Selected card (tap mode) */
+    .trash-card.selected {
+      border-color: #22d3ee !important;
+      box-shadow: 0 0 0 2px rgba(34,211,238,0.6), 0 0 18px rgba(34,211,238,0.35);
+    }
+
+    /* Camera drop target highlight */
+    #vision-hud-container.drop-hover {
+      box-shadow: inset 0 0 0 2px #06b6d4, 0 0 25px rgba(6,182,212,0.35);
+    }
+
+    /* Bounding box while analyzing */
+    .bb-analyzing { border-color: #f59e0b !important; box-shadow: 0 0 15px rgba(245,158,11,0.4) !important; animation: bbpulse 0.5s ease-in-out infinite alternate; }
+    @keyframes bbpulse { from { opacity: 0.6; } to { opacity: 1; } }
+
+    /* Modal / log fade-in (was referenced but never defined) */
+    @keyframes fade-in { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .animate-fade-in { animation: fade-in 0.25s ease-out; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scanline, .radar-sweep, .bb-analyzing { animation: none; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col select-none">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 bg-cyan-950/80 border border-cyan-500/30 rounded-xl text-cyan-400">
+          <i class="fa-solid fa-microchip text-2xl animate-pulse"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="bg-cyan-500/10 text-cyan-400 text-xs px-2 py-0.5 rounded border border-cyan-500/20 font-mono-tech">CAPSTONE PROJECT 2026</span>
+            <span class="text-slate-400 text-xs">made by gemini & Anita</span>
+          </div>
+          <h1 class="text-xl font-bold tracking-wide text-white flex items-center gap-2">
+            AI 智慧垃圾辨識與自動分類系統
+            <span class="text-xs font-normal text-slate-400 hidden sm:inline">(YOLOv8-Nano + Edge AI)</span>
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Telemetry -->
+        <div class="flex items-center space-x-4 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono-tech">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span class="text-slate-400">FPS:</span>
+            <span id="fps-counter" class="text-emerald-400 font-bold">60.0</span>
+          </div>
+          <div class="h-4 w-px bg-slate-800"></div>
+          <div>
+            <span class="text-slate-400">LATENCY:</span>
+            <span id="latency-counter" class="text-cyan-400 font-bold">11.8ms</span>
+          </div>
+          <div class="h-4 w-px bg-slate-800 hidden md:block"></div>
+          <div class="hidden md:block">
+            <span class="text-slate-400">GPU TEMP:</span>
+            <span id="temp-counter" class="text-amber-400 font-bold">48°C</span>
+          </div>
+        </div>
+
+        <!-- Buttons (now visible on all screen sizes) -->
+        <div class="flex items-center gap-2">
+          <button id="btn-defense-mode" class="px-2.5 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 rounded-lg text-xs transition">
+            <i class="fa-solid fa-graduation-cap mr-1"></i>教授答辯模擬
+          </button>
+          <button id="btn-auto-demo" class="px-2.5 py-1.5 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs transition">
+            <i class="fa-solid fa-play mr-1"></i>自動展示 Demo
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+    <!-- LEFT COLUMN -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+
+      <!-- Camera HUD -->
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800 relative overflow-hidden flex flex-col justify-between">
+        <div class="flex justify-between items-center text-xs font-mono-tech z-10">
+          <div class="flex items-center space-x-2 text-cyan-400">
+            <i class="fa-solid fa-video text-xs animate-pulse"></i>
+            <span>CAM_01: HIGH_RES_INPUT [1080P]</span>
+          </div>
+          <div class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">MODEL: YOLOv8n ACTIVE</div>
+        </div>
+
+        <div id="vision-hud-container" role="button" tabindex="0" aria-label="AI 自動辨識區"
+             class="relative my-4 aspect-video w-full bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-center overflow-hidden cursor-pointer transition-shadow">
+          <div class="absolute inset-0 radar-sweep rounded-xl"></div>
+          <div class="scanline"></div>
+
+          <div class="absolute inset-0 rounded-xl pointer-events-none flex items-center justify-center">
+            <div class="w-full h-px bg-cyan-500/20"></div>
+            <div class="h-full w-px bg-cyan-500/20 absolute"></div>
+            <div class="w-24 h-24 border border-cyan-500/30 rounded-full absolute"></div>
+          </div>
+
+          <!-- Detected object -->
+          <div id="cam-object" class="absolute w-28 h-28 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg overflow-hidden flex items-center justify-center opacity-0 transition-opacity duration-200 pointer-events-none"></div>
+
+          <!-- Bounding box -->
+          <div id="bounding-box" class="absolute left-1/2 top-1/2 w-36 h-36 border-2 border-cyan-400 bg-cyan-500/10 rounded flex flex-col justify-between p-1 shadow-[0_0_15px_rgba(6,182,212,0.3)] opacity-0 transition-all duration-200 pointer-events-none"
+               style="transform: translate(-50%, -50%);">
+            <div class="flex justify-between gap-1 text-[10px] font-mono-tech bg-cyan-950/90 text-cyan-300 px-1 rounded">
+              <span id="bb-label" class="truncate">TRACKING_NULL</span>
+              <span id="bb-conf">--</span>
+            </div>
+            <div class="flex justify-between text-cyan-400 text-xs"><span>┌</span><span>┐</span></div>
+            <div class="flex justify-between text-cyan-400 text-xs"><span>└</span><span>┘</span></div>
+          </div>
+
+          <!-- Status / progress -->
+          <div id="cam-status" class="absolute top-2 left-2 text-[10px] font-mono-tech text-slate-500 z-10">IDLE</div>
+          <div id="cam-progress" class="absolute bottom-0 left-0 h-1 bg-cyan-400" style="width:0%"></div>
+
+          <div id="camera-placeholder" class="text-center z-10 pointer-events-none transition-opacity duration-300">
+            <i class="fa-solid fa-expand text-3xl text-slate-700 mb-2"></i>
+            <p class="text-xs text-slate-500 font-mono-tech">拖曳垃圾至此 → AI 自動辨識並開啟正確桶蓋<br>拖曳至垃圾桶 → 手動分類測驗</p>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-400 font-mono-tech z-10 border-t border-slate-800/80 pt-2">
+          <span>TARGET_CLASS: <strong id="target-class-display" class="text-cyan-400">STANDBY</strong></span>
+          <span>ROI: <span class="text-slate-300">640x640</span></span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800 flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i>分類數據與模型效能統計
+          </h3>
+          <span class="text-xs text-slate-500 font-mono-tech">Acc: 98.6%</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 items-center">
+          <div class="h-32 relative"><canvas id="category-chart"></canvas></div>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>一般垃圾</span>
+              <span id="cnt-general" class="font-bold font-mono-tech text-slate-200">0</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>紙類</span>
+              <span id="cnt-paper" class="font-bold font-mono-tech text-blue-400">0</span>
+            </div>
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>塑膠類</span>
+              <span id="cnt-plastic" class="font-bold font-mono-tech text-amber-400">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+          <div class="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+            <div class="text-slate-500">總投遞件數</div>
+            <div id="total-items" class="font-mono-tech text-cyan-300 text-sm">0</div>
+          </div>
+          <div class="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+            <div class="text-slate-500">總重量</div>
+            <div id="total-weight" class="font-mono-tech text-cyan-300 text-sm">0.00 kg</div>
+          </div>
+          <div class="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+            <div class="text-slate-500">手動分類正確率</div>
+            <div id="acc-manual" class="font-mono-tech text-emerald-300 text-sm">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event log -->
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800">
+        <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-terminal text-cyan-400"></i>系統事件紀錄
+        </h3>
+        <ul id="event-log" class="text-[11px] font-mono-tech space-y-1 max-h-40 overflow-y-auto pr-1">
+          <li class="log-empty text-slate-600">等待投遞事件…</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="lg:col-span-7 flex flex-col gap-6">
+
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-boxes-packing text-cyan-400"></i>3D 智慧響應垃圾桶模組
+          </h2>
+          <span class="text-xs text-slate-400 font-mono-tech">CAPACITY: <span id="cap-label"></span> kg / BIN</span>
+        </div>
+        <div id="bins-grid" class="grid grid-cols-3 gap-3 sm:gap-4"></div>
+      </div>
+
+      <div class="glass-panel rounded-2xl p-4 border border-slate-800 flex-1 flex flex-col justify-between">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-boxes-stacked text-cyan-400"></i>
+            <h3 class="text-sm font-bold text-slate-200">待辨識垃圾傳送帶 (18 種測試樣本)</h3>
+          </div>
+          <div class="flex items-center space-x-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium transition" data-filter="all">全部 (18)</button>
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium transition" data-filter="general">一般 (6)</button>
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium transition" data-filter="paper">紙類 (6)</button>
+            <button class="filter-btn px-3 py-1 rounded-lg font-medium transition" data-filter="plastic">塑膠 (6)</button>
+          </div>
+        </div>
+
+        <div id="trash-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[380px] overflow-y-auto p-1"></div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <span class="flex items-center gap-1.5">
+            <i class="fa-solid fa-hand-pointer text-cyan-400"></i>
+            <span id="hint-text"></span>
+          </span>
+          <button id="btn-reset" class="text-slate-400 hover:text-cyan-400 transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate-right"></i>重置 / 清空垃圾桶
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Defense modal -->
+  <div id="defense-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-2xl border border-indigo-500/30 p-6 shadow-2xl relative animate-fade-in">
+      <button id="close-defense-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg" aria-label="關閉">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="p-3 bg-indigo-950 rounded-xl text-indigo-400 border border-indigo-500/30">
+          <i class="fa-solid fa-user-graduate text-2xl"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">專題審查口試答辯模擬 (Professor Q&A)</h3>
+          <p class="text-xs text-indigo-300">模擬畢業專題提問，評估 AI 模型與硬體控制整合細節</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 my-4 text-sm max-h-[60vh] overflow-y-auto pr-1">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q1: 系統如何處理瓶身壓扁或嚴重遮擋 (Occlusion) 的垃圾？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">答：我們使用了 Data Augmentation（Mosaic, MixUp 與 random erase）進行 dataset 擴充，並採用 Feature Pyramid Network (FPN) 強化多尺度特徵擷取，使 YOLOv8 在遮擋率 40% 下仍具備 92% 辨識率。</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q2: Edge AI 硬體邊緣端推理 (Inference) 的硬體規格與延遲？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">答：本系統部署於 NVIDIA Jetson Orin Nano 邊緣板卡，透過 TensorRT FP16 量化優化，將推理延遲降至約 11.8ms，達到每秒 60 FPS 以上的實時影像串流處理能力。</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q3: 超音波感應器與伺服馬達 (Servo) 如何搭配 AI 做閉迴路控制？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">答：由 ESP32 微控制器進行即時監控，當超音波偵測物體接近低於 15cm 且 AI 給出信心度 Confidence > 85% 時，輸出 PWM 訊號驅動 SG90 馬達開啟 90 度桶蓋，並保持 3 秒後自動關閉。</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
+          <div class="font-semibold text-cyan-300 mb-1">Q4: 如何判斷垃圾桶已滿？</div>
+          <div class="text-xs text-slate-300 leading-relaxed">答：桶內超音波感測器量測垃圾頂面距離，距離越短代表填充率越高；本模擬器以重量換算填充率，達 90% 時 LED 轉為警示色，超過容量上限則拒絕開蓋並提示清運。</div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button id="btn-modal-ok" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm transition">理解解答 / 返回模擬器</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" role="status" aria-live="polite"
+       class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 glass-panel px-4 py-3 rounded-xl border border-cyan-500/40 text-xs flex items-center space-x-2 text-cyan-200 max-w-[90vw]">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    /* =====================================================================
+       0. CONFIG
+       ===================================================================== */
+    const MAX_WEIGHT = 6;        // 每桶容量上限 (kg)
+    const CONF_THRESHOLD = 85;   // AI 開蓋信心度門檻 (%)，與答辯 Q3 一致
+    const DEFAULT_HINT = '拖曳卡片至垃圾桶＝手動分類；拖到鏡頭畫面＝AI 自動分類（手機：先點卡片，再點目標）';
+
+    const CATS = {
+      general: { name: '一般垃圾桶', short: '一般', dot: 'bg-slate-400', text: 'text-slate-300', chart: '#64748b' },
+      paper:   { name: '紙類回收桶', short: '紙類', dot: 'bg-blue-500',  text: 'text-blue-400',  chart: '#3b82f6' },
+      plastic: { name: '塑膠類桶',   short: '塑膠', dot: 'bg-amber-500', text: 'text-amber-400', chart: '#f59e0b' }
+    };
+
+    const BIN_CFG = [
+      { cat: 'general', servo: 1, label: '一般垃圾', en: 'General Waste', icon: 'fa-trash-can',
+        wrap: 'border-slate-700/60 hover:border-slate-500', servoText: 'text-slate-400',
+        lid: 'bg-slate-700 border-slate-600 text-slate-300', body: 'from-slate-800 to-slate-900 border-slate-700',
+        iconC: 'text-slate-400', title: 'text-slate-200', sub: 'text-slate-400', fill: 'bg-slate-400', lcd: 'bg-slate-950 border-slate-800' },
+      { cat: 'paper', servo: 2, label: '紙類回收', en: 'Paper Class', icon: 'fa-newspaper',
+        wrap: 'border-blue-900/60 hover:border-blue-500', servoText: 'text-blue-400',
+        lid: 'bg-blue-900 border-blue-700 text-blue-200', body: 'from-blue-950 to-slate-900 border-blue-800',
+        iconC: 'text-blue-400', title: 'text-blue-200', sub: 'text-blue-400', fill: 'bg-blue-500', lcd: 'bg-blue-950/80 border-blue-900' },
+      { cat: 'plastic', servo: 3, label: '塑膠類', en: 'Plastics & PET', icon: 'fa-bottle-water',
+        wrap: 'border-amber-900/60 hover:border-amber-500', servoText: 'text-amber-400',
+        lid: 'bg-amber-900 border-amber-700 text-amber-200', body: 'from-amber-950 to-slate-900 border-amber-800',
+        iconC: 'text-amber-400', title: 'text-amber-200', sub: 'text-amber-400', fill: 'bg-amber-500', lcd: 'bg-amber-950/80 border-amber-900' }
+    ];
+
+    /* =====================================================================
+       1. DATASET (image filenames unchanged; emoji = fallback if image missing)
+       ===================================================================== */
+    const WASTE_DATA = [
+      { id: 'g1', name: '髒污塑膠餐盒',   category: 'general', conf: 98.4, weight: 0.05, img: 'dirty_plastic_box.webp', emoji: '🍱' },
+      { id: 'g2', name: '餅乾包裝',       category: 'general', conf: 96.1, weight: 0.02, img: 'cookie_package.jpg',     emoji: '🍪' },
+      { id: 'g3', name: '使用過衛生紙',   category: 'general', conf: 99.1, weight: 0.01, img: 'tissue.jpg',             emoji: '🧻' },
+      { id: 'g4', name: '塑膠吸管',       category: 'general', conf: 95.7, weight: 0.02, img: 'straw.jpg',              emoji: '🥤' },
+      { id: 'g5', name: '口罩',           category: 'general', conf: 94.8, weight: 0.01, img: 'mask.jpg',               emoji: '😷' },
+      { id: 'g6', name: '舊木筷/竹籤',    category: 'general', conf: 97.2, weight: 0.03, img: 'chopsticks.jpg',         emoji: '🥢' },
+
+      { id: 'p1', name: '快遞網購紙箱',   category: 'paper',   conf: 99.5, weight: 0.35, img: 'box.webp',               emoji: '📦' },
+      { id: 'p2', name: '舊報紙雜誌',     category: 'paper',   conf: 98.8, weight: 0.20, img: 'newspaper.jpg',          emoji: '📰' },
+      { id: 'p3', name: '乾淨牛皮紙袋',   category: 'paper',   conf: 97.9, weight: 0.08, img: 'paperbag.jpg',           emoji: '🛍️' },
+      { id: 'p4', name: '辦公廢影印紙',   category: 'paper',   conf: 99.2, weight: 0.04, img: 'doc.webp',               emoji: '📄' },
+      { id: 'p5', name: '雞蛋包裝紙盒',   category: 'paper',   conf: 96.4, weight: 0.15, img: 'eggbox.png',             emoji: '🥚' },
+      { id: 'p6', name: '牛奶紙盒',       category: 'paper',   conf: 97.6, weight: 0.06, img: 'milkbox.png',            emoji: '🥛' },
+
+      { id: 'l1', name: '透明 PET 寶特瓶', category: 'plastic', conf: 99.7, weight: 0.05, img: 'waterbottle.webp',      emoji: '💧' },
+      { id: 'l2', name: '外帶塑膠飲料杯', category: 'plastic', conf: 98.1, weight: 0.03, img: 'drink.jpg',              emoji: '🧋' },
+      { id: 'l3', name: '洗髮精 HDPE 瓶', category: 'plastic', conf: 97.5, weight: 0.18, img: 'shampoo.jpg',            emoji: '🧴' },
+      { id: 'l4', name: '洗衣精塑膠罐',   category: 'plastic', conf: 96.9, weight: 0.28, img: 'washer.webp',            emoji: '🧺' },
+      { id: 'l5', name: '塑膠保鮮盒',     category: 'plastic', conf: 95.3, weight: 0.11, img: 'plasticbox.png',         emoji: '🫙' },
+      { id: 'l6', name: '彩色瓶蓋套件',   category: 'plastic', conf: 98.6, weight: 0.01, img: 'bottlecap.png',          emoji: '🔘' }
+    ];
+
+    /* =====================================================================
+       2. STATE & HELPERS
+       ===================================================================== */
+    const state = {
+      counts: { general: 0, paper: 0, plastic: 0 },
+      weight: { general: 0, paper: 0, plastic: 0 },
+      manualCorrect: 0,
+      manualWrong: 0,
+      dragItem: null,
+      selected: null,
+      busy: false,
+      filter: 'all',
+      demoTimer: null,
+      toastTimer: null,
+      camResetTimer: null,
+      latency: 11.8,
+      chart: null
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const binEl = (cat) => document.getElementById(`bin-${cat}`);
+
+    // Image + emoji fallback without fragile inline onerror quoting
+    function itemVisual(item, emojiSize) {
+      return `<span class="${emojiSize} leading-none">${item.emoji}</span>
+              <img src="${item.img}" alt="${item.name}" draggable="false" class="absolute inset-0 w-full h-full object-cover">`;
+    }
+    function bindImgFallback(root) {
+      root.querySelectorAll('img').forEach(img => {
+        img.addEventListener('error', () => img.remove(), { once: true });
+      });
+    }
+
+    /* =====================================================================
+       3. AUDIO
+       ===================================================================== */
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'scan') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, t);
+          osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+          gain.gain.setValueAtTime(0.08, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+          osc.start(); osc.stop(t + 0.1);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, t);
+          osc.frequency.setValueAtTime(659.25, t + 0.08);
+          osc.frequency.setValueAtTime(783.99, t + 0.16);
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+          osc.start(); osc.stop(t + 0.3);
+        } else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, t);
+          osc.frequency.setValueAtTime(110, t + 0.12);
+          gain.gain.setValueAtTime(0.15, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+          osc.start(); osc.stop(t + 0.25);
+        }
+      } catch (e) { /* audio unavailable */ }
+    }
+
+    /* =====================================================================
+       4. CHART
+       ===================================================================== */
+    function initChart() {
+      if (typeof Chart === 'undefined') return; // CDN failed – app still works
+      const ctx = document.getElementById('category-chart').getContext('2d');
+      state.chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['一般垃圾', '紙類', '塑膠類'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: Object.values(CATS).map(c => c.chart),
+            borderWidth: 2,
+            borderColor: '#0f172a'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
+      });
+    }
+
+    /* =====================================================================
+       5. RENDER BINS & DECK
+       ===================================================================== */
+    function renderBins() {
+      $('#bins-grid').innerHTML = BIN_CFG.map(b => `
+        <div id="bin-${b.cat}" data-category="${b.cat}" role="button" tabindex="0" aria-label="${b.label}"
+             class="bin-container glass-panel rounded-2xl p-3 border ${b.wrap} transition-colors duration-300 relative group flex flex-col justify-between min-h-[230px] cursor-pointer">
+          <div class="flex justify-between items-center text-[10px] font-mono-tech mb-2 gap-1">
+            <div class="flex items-center space-x-1">
+              <span class="led-light w-2 h-2 rounded-full bg-slate-600"></span>
+              <span class="${b.servoText}">SERVO #${b.servo}</span>
+            </div>
+            <span class="ultra-dist text-slate-500">25cm</span>
+          </div>
+
+          <div class="bin-body flex-1 flex flex-col items-center justify-center my-1">
+            <div class="bin-lid w-full h-8 border rounded-t-lg shadow-md mb-1 flex items-center justify-center text-xs ${b.lid}">
+              <i class="fa-solid fa-angles-up mr-1 text-[10px]"></i> 蓋板
+            </div>
+            <div class="w-full flex-1 bg-gradient-to-b ${b.body} border rounded-b-lg relative overflow-hidden flex flex-col items-center justify-center p-3 text-center shadow-inner">
+              <div class="fill-level absolute bottom-0 left-0 right-0 ${b.fill} opacity-25 transition-all duration-500" style="height:0%"></div>
+              <i class="fa-solid ${b.icon} text-3xl ${b.iconC} mb-1 group-hover:scale-110 transition-transform relative"></i>
+              <span class="font-bold text-sm ${b.title} relative">${b.label}</span>
+              <span class="text-[10px] ${b.sub} relative">${b.en}</span>
+              <span class="fill-pct text-[10px] font-mono-tech text-slate-400 relative mt-1">FILL 0%</span>
+            </div>
+          </div>
+
+          <div class="lcd-screen border rounded p-1.5 text-center font-mono-tech text-[10px] ${b.lcd}">
+            <span class="lcd-text text-slate-400">READY (0.00 kg)</span>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderWasteDeck() {
+      const grid = $('#trash-grid');
+      grid.innerHTML = '';
+      const list = state.filter === 'all' ? WASTE_DATA : WASTE_DATA.filter(i => i.category === state.filter);
+
+      list.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'trash-card glass-panel bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-2.5 flex flex-col items-center justify-between cursor-grab active:cursor-grabbing transition-all duration-200 hover:-translate-y-1 hover:shadow-lg relative group';
+        if (state.selected?.id === item.id) card.classList.add('selected');
+        card.draggable = true;
+        card.tabIndex = 0;
+        card.dataset.id = item.id;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', item.name);
+
+        card.innerHTML = `
+          <div class="w-full flex justify-between items-center text-[9px] font-mono-tech mb-1">
+            <span class="inline-block w-2 h-2 rounded-full ${CATS[item.category].dot}"></span>
+            <span class="text-slate-400">${item.conf}%</span>
+          </div>
+          <div class="w-16 h-16 rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center mb-2 border border-slate-800 group-hover:border-slate-700 relative">
+            ${itemVisual(item, 'text-3xl')}
+          </div>
+          <span class="text-xs font-semibold text-slate-200 text-center truncate w-full" title="${item.name}">${item.name}</span>
+          <span class="text-[10px] text-slate-500 font-mono-tech mt-0.5">${item.weight} kg</span>`;
+        bindImgFallback(card);
+
+        card.addEventListener('dragstart', (e) => handleDragStart(e, item, card));
+        card.addEventListener('dragend', () => handleDragEnd(card));
+        card.addEventListener('click', () => toggleSelect(item));
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(item); }
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    function updateFilterButtons() {
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        const active = b.dataset.filter === state.filter;
+        b.classList.toggle('bg-cyan-600', active);
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('text-slate-400', !active);
+        b.classList.toggle('hover:text-white', !active);
+      });
+    }
+
+    /* =====================================================================
+       6. CAMERA HUD
+       ===================================================================== */
+    function showOnCamera(item, analyzing = false) {
+      clearTimeout(state.camResetTimer);
+      $('#camera-placeholder').style.opacity = '0';
+
+      const obj = $('#cam-object');
+      obj.innerHTML = itemVisual(item, 'text-6xl');
+      bindImgFallback(obj);
+      obj.style.opacity = '1';
+
+      const bb = $('#bounding-box');
+      const dx = Math.round((Math.random() - 0.5) * 14);
+      const dy = Math.round((Math.random() - 0.5) * 14);
+      bb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      bb.style.opacity = '1';
+      bb.classList.toggle('bb-analyzing', analyzing);
+      bb.classList.add('glow-cyan');
+
+      $('#bb-label').textContent = analyzing ? 'ANALYZING…' : item.name;
+      $('#bb-conf').textContent = analyzing ? '--' : `${item.conf}%`;
+
+      const t = $('#target-class-display');
+      t.textContent = analyzing ? 'INFERENCE…' : item.name;
+      t.className = analyzing ? 'text-amber-300' : CATS[item.category].text;
+
+      if (!analyzing) setCamStatus('TRACKING', 'text-cyan-400');
+    }
+
+    function setCamStatus(text, color) {
+      const s = $('#cam-status');
+      s.textContent = text;
+      s.className = `absolute top-2 left-2 text-[10px] font-mono-tech z-10 ${color}`;
+    }
+
+    function resetCamera() {
+      $('#cam-object').style.opacity = '0';
+      const bb = $('#bounding-box');
+      bb.style.opacity = '0';
+      bb.classList.remove('bb-analyzing', 'glow-cyan');
+      $('#camera-placeholder').style.opacity = '1';
+      $('#target-class-display').textContent = 'STANDBY';
+      $('#target-class-display').className = 'text-cyan-400';
+      setCamStatus('IDLE', 'text-slate-500');
+    }
+
+    function scheduleCameraReset(ms = 1200) {
+      clearTimeout(state.camResetTimer);
+      state.camResetTimer = setTimeout(() => {
+        if (!state.busy && !state.selected && !state.dragItem) resetCamera();
+      }, ms);
+    }
+
+    /* =====================================================================
+       7. BIN VISUAL STATES
+       ===================================================================== */
+    function setBinIdle(bin) {
+      const cat = bin.dataset.category;
+      const w = state.weight[cat];
+      const pct = Math.min(w / MAX_WEIGHT, 1);
+
+      bin.classList.remove('open');
+      const dist = bin.querySelector('.ultra-dist');
+      dist.textContent = `${Math.round(25 - pct * 20)}cm`;
+      dist.className = 'ultra-dist text-slate-500';
+
+      bin.querySelector('.fill-level').style.height = `${pct * 100}%`;
+      bin.querySelector('.fill-pct').textContent = `FILL ${Math.round(pct * 100)}%`;
+
+      const led = bin.querySelector('.led-light');
+      const lcd = bin.querySelector('.lcd-text');
+      if (pct >= 0.99) {
+        led.className = 'led-light w-2 h-2 rounded-full bg-rose-500 animate-pulse';
+        lcd.textContent = `FULL (${w.toFixed(2)} kg)`;
+        lcd.className = 'lcd-text text-rose-400';
+      } else if (pct >= 0.9) {
+        led.className = 'led-light w-2 h-2 rounded-full bg-amber-400';
+        lcd.textContent = `NEAR FULL (${w.toFixed(2)} kg)`;
+        lcd.className = 'lcd-text text-amber-300';
+      } else {
+        led.className = 'led-light w-2 h-2 rounded-full bg-slate-600';
+        lcd.textContent = `READY (${w.toFixed(2)} kg)`;
+        lcd.className = 'lcd-text text-slate-400';
+      }
+    }
+
+    function setBinPreview(bin, item) {
+      const dist = bin.querySelector('.ultra-dist');
+      dist.textContent = '08cm → Trigger';
+      dist.className = 'ultra-dist text-emerald-400';
+
+      const led = bin.querySelector('.led-light');
+      const lcd = bin.querySelector('.lcd-text');
+      if (item.category === bin.dataset.category) {
+        bin.classList.add('open');
+        led.className = 'led-light w-2 h-2 rounded-full bg-emerald-500 glow-green';
+        lcd.textContent = 'MATCH: OPENING LID';
+        lcd.className = 'lcd-text text-emerald-400';
+      } else {
+        triggerShake(bin);
+        led.className = 'led-light w-2 h-2 rounded-full bg-rose-500';
+        lcd.textContent = 'MISMATCH WARNING!';
+        lcd.className = 'lcd-text text-rose-400 animate-pulse';
+      }
+    }
+
+    function triggerShake(bin) {
+      bin.classList.remove('shake');
+      void bin.offsetWidth; // restart animation
+      bin.classList.add('shake');
+    }
+
+    /* =====================================================================
+       8. CORE LOGIC
+       ===================================================================== */
+    function depositItem(item, bin, source) {
+      const cat = item.category;
+      if (state.weight[cat] + item.weight > MAX_WEIGHT + 1e-9) {
+        playSound('error');
+        triggerShake(bin);
+        showToast(`警告：${CATS[cat].name}已滿，請清運後再投遞！`, 'error');
+        addLog(`⚠ ${CATS[cat].name}容量已滿，拒絕投遞「${item.name}」`, 'warn');
+        return false;
+      }
+
+      state.counts[cat]++;
+      state.weight[cat] = Math.round((state.weight[cat] + item.weight) * 1000) / 1000;
+
+      playSound('success');
+      showToast(`成功辨識投遞：[${item.name}] → ${CATS[cat].name}`, 'success');
+      addLog(`✓ [${source}] ${item.name} → ${CATS[cat].short} (${item.conf}%)`, 'success');
+      updateStats();
+      return true;
+    }
+
+    function manualDrop(item, bin) {
+      if (state.busy) return;
+      const binCat = bin.dataset.category;
+
+      if (item.category === binCat) {
+        state.manualCorrect++;
+        bin.classList.add('open');
+        depositItem(item, bin, '手動');
+        setTimeout(() => setBinIdle(bin), 700);
+      } else {
+        state.manualWrong++;
+        triggerShake(bin);
+        playSound('error');
+        showToast(`分類不匹配！「${item.name}」應投入 ${CATS[item.category].name}`, 'error');
+        addLog(`✗ ${item.name} 誤投${CATS[binCat].short}（正確：${CATS[item.category].short}）`, 'error');
+        setTimeout(() => setBinIdle(bin), 600);
+      }
+      updateStats();
+      scheduleCameraReset();
+    }
+
+    async function aiAutoSort(item) {
+      if (state.busy) return false;
+      state.busy = true;
+      clearSelection(false);
+
+      // Stage 1: inference
+      showOnCamera(item, true);
+      setCamStatus('RUNNING INFERENCE…', 'text-amber-300');
+      const prog = $('#cam-progress');
+      prog.style.transition = 'none';
+      prog.style.width = '0%';
+      void prog.offsetWidth;
+      prog.style.transition = 'width 700ms linear';
+      prog.style.width = '100%';
+      playSound('scan');
+      await sleep(700);
+
+      // Stage 2: result
+      $('#bounding-box').classList.remove('bb-analyzing');
+      $('#bb-label').textContent = item.name;
+      $('#bb-conf').textContent = `${item.conf}%`;
+      $('#target-class-display').textContent = item.name;
+      $('#target-class-display').className = CATS[item.category].text;
+      setCamStatus(`CLASS=${item.category.toUpperCase()} · ${item.conf}% · ${state.latency}ms`, 'text-emerald-300');
+
+      const bin = binEl(item.category);
+
+      if (item.conf < CONF_THRESHOLD) {
+        playSound('error');
+        showToast(`信心度 ${item.conf}% 低於門檻 ${CONF_THRESHOLD}%，不開蓋，請重新擺放`, 'error');
+        addLog(`? 低信心度 ${item.name} (${item.conf}%)，已略過`, 'warn');
+      } else {
+        // Stage 3: actuate servo
+        setBinPreview(bin, item);
+        await sleep(600);
+        depositItem(item, bin, 'AI');
+        await sleep(500);
+        setBinIdle(bin);
+      }
+
+      prog.style.transition = 'none';
+      prog.style.width = '0%';
+      state.busy = false;
+      scheduleCameraReset(900);
+      return true;
+    }
+
+    /* =====================================================================
+       9. SELECTION (tap / keyboard mode – works on mobile)
+       ===================================================================== */
+    function toggleSelect(item) {
+      if (state.busy) return;
+      if (state.selected?.id === item.id) { clearSelection(); return; }
+      state.selected = item;
+      document.querySelectorAll('.trash-card').forEach(c => c.classList.toggle('selected', c.dataset.id === item.id));
+      showOnCamera(item);
+      playSound('scan');
+      $('#hint-text').innerHTML = `已選取「<span class="text-cyan-300">${item.name}</span>」→ 點垃圾桶手動投遞，或點鏡頭畫面交給 AI`;
+    }
+
+    function clearSelection(resetCam = true) {
+      state.selected = null;
+      document.querySelectorAll('.trash-card.selected').forEach(c => c.classList.remove('selected'));
+      $('#hint-text').textContent = DEFAULT_HINT;
+      if (resetCam) scheduleCameraReset(0);
+    }
+
+    /* =====================================================================
+       10. DRAG & DROP
+       ===================================================================== */
+    function handleDragStart(e, item, card) {
+      if (state.busy) { e.preventDefault(); return; }
+      state.dragItem = item;
+      e.dataTransfer.setData('text/plain', item.id);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('opacity-50');
+      playSound('scan');
+      showOnCamera(item);
+    }
+
+    function handleDragEnd(card) {
+      card.classList.remove('opacity-50');
+      state.dragItem = null;
+      document.querySelectorAll('.bin-container').forEach(bin => {
+        bin._dc = 0;
+        if (!bin.classList.contains('open')) setBinIdle(bin);
+      });
+      const cam = $('#vision-hud-container');
+      cam._dc = 0;
+      cam.classList.remove('drop-hover');
+      if (!state.busy && !state.selected) scheduleCameraReset();
+    }
+
+    function setupBinTargets() {
+      document.querySelectorAll('.bin-container').forEach(bin => {
+        bin._dc = 0; // drag-enter counter avoids flicker from child elements
+        bin.addEventListener('animationend', () => bin.classList.remove('shake'));
+
+        bin.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (!state.dragItem) return;
+          if (++bin._dc === 1) setBinPreview(bin, state.dragItem);
+        });
+        bin.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        bin.addEventListener('dragleave', () => {
+          if (--bin._dc <= 0) { bin._dc = 0; setBinIdle(bin); }
+        });
+        bin.addEventListener('drop', (e) => {
+          e.preventDefault();
+          bin._dc = 0;
+          if (state.dragItem) manualDrop(state.dragItem, bin);
+        });
+
+        const activate = () => {
+          if (state.selected) {
+            const item = state.selected;
+            clearSelection(false);
+            manualDrop(item, bin);
+          } else {
+            showToast('請先點選下方的垃圾卡片，再點擊垃圾桶', 'info');
+          }
+        };
+        bin.addEventListener('click', activate);
+        bin.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+      });
+    }
+
+    function setupCameraTarget() {
+      const cam = $('#vision-hud-container');
+      cam._dc = 0;
+
+      cam.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (++cam._dc === 1) cam.classList.add('drop-hover');
+      });
+      cam.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+      cam.addEventListener('dragleave', () => {
+        if (--cam._dc <= 0) { cam._dc = 0; cam.classList.remove('drop-hover'); }
+      });
+      cam.addEventListener('drop', (e) => {
+        e.preventDefault();
+        cam._dc = 0;
+        cam.classList.remove('drop-hover');
+        if (state.dragItem) aiAutoSort(state.dragItem);
+      });
+
+      const activate = () => {
+        if (state.selected) aiAutoSort(state.selected);
+        else showToast('請先點選或拖曳一個垃圾卡片到鏡頭畫面', 'info');
+      };
+      cam.addEventListener('click', activate);
+      cam.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+      });
+    }
+
+    /* =====================================================================
+       11. UI UPDATES
+       ===================================================================== */
+    function updateStats() {
+      for (const c of Object.keys(CATS)) $(`#cnt-${c}`).textContent = state.counts[c];
+
+      if (state.chart) {
+        state.chart.data.datasets[0].data = [state.counts.general, state.counts.paper, state.counts.plastic];
+        state.chart.update();
+      }
+
+      const totalItems = Object.values(state.counts).reduce((a, b) => a + b, 0);
+      const totalW = Object.values(state.weight).reduce((a, b) => a + b, 0);
+      $('#total-items').textContent = totalItems;
+      $('#total-weight').textContent = `${totalW.toFixed(2)} kg`;
+
+      const n = state.manualCorrect + state.manualWrong;
+      $('#acc-manual').textContent = n ? `${Math.round(state.manualCorrect / n * 100)}% (${state.manualCorrect}/${n})` : '--';
+
+      document.querySelectorAll('.bin-container').forEach(bin => {
+        if (!bin.classList.contains('open') && !bin._dc) setBinIdle(bin);
+      });
+    }
+
+    function addLog(text, type = 'info') {
+      const ul = $('#event-log');
+      ul.querySelector('.log-empty')?.remove();
+      const color = { success: 'text-emerald-400', error: 'text-rose-400', warn: 'text-amber-400', info: 'text-cyan-400' }[type];
+      const li = document.createElement('li');
+      li.className = 'flex gap-2 animate-fade-in';
+      const time = document.createElement('span');
+      time.className = 'text-slate-600 shrink-0';
+      time.textContent = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+      const msg = document.createElement('span');
+      msg.className = color;
+      msg.textContent = text;
+      li.append(time, msg);
+      ul.prepend(li);
+      while (ul.children.length > 30) ul.lastChild.remove();
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = $('#toast');
+      const icon = $('#toast-icon');
+      $('#toast-msg').textContent = msg;
+
+      const styles = {
+        success: ['fa-circle-check text-emerald-400', 'border-emerald-500/40 text-emerald-200'],
+        error:   ['fa-triangle-exclamation text-rose-400', 'border-rose-500/40 text-rose-200'],
+        info:    ['fa-circle-info text-cyan-400', 'border-cyan-500/40 text-cyan-200']
+      }[type] || [];
+
+      icon.className = `fa-solid ${styles[0]} text-base`;
+      const base = 'fixed bottom-6 right-6 z-50 transform transition-all duration-300 glass-panel px-4 py-3 rounded-xl border text-xs flex items-center space-x-2 max-w-[90vw]';
+      toast.className = `${base} ${styles[1]} translate-y-0 opacity-100`;
+
+      clearTimeout(state.toastTimer); // fixes overlapping toasts hiding early
+      state.toastTimer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 2800);
+    }
+
+    /* =====================================================================
+       12. AUTO DEMO
+       ===================================================================== */
+    function setDemoButton(running) {
+      const btn = $('#btn-auto-demo');
+      btn.innerHTML = running
+        ? '<i class="fa-solid fa-square mr-1"></i>停止展示'
+        : '<i class="fa-solid fa-play mr-1"></i>自動展示 Demo';
+      btn.className = running
+        ? 'px-2.5 py-1.5 bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/40 text-amber-300 rounded-lg text-xs transition'
+        : 'px-2.5 py-1.5 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-300 rounded-lg text-xs transition';
+    }
+
+    function stopAutoDemo(msg, type = 'info') {
+      clearInterval(state.demoTimer);
+      state.demoTimer = null;
+      setDemoButton(false);
+      if (msg) showToast(msg, type);
+    }
+
+    function toggleAutoDemo() {
+      if (state.demoTimer) { stopAutoDemo('已停止自動展示模式'); return; }
+
+      setDemoButton(true);
+      showToast('啟動 AI 自動辨識分類展示模式', 'info');
+      addLog('▶ 自動展示模式啟動', 'info');
+
+      const tick = () => {
+        if (state.busy) return;
+        const pool = WASTE_DATA.filter(i => state.weight[i.category] + i.weight <= MAX_WEIGHT + 1e-9);
+        if (!pool.length) { stopAutoDemo('所有垃圾桶已滿，自動展示已停止', 'error'); return; }
+        aiAutoSort(pool[Math.floor(Math.random() * pool.length)]);
+      };
+      tick();
+      state.demoTimer = setInterval(tick, 2400);
+    }
+
+    /* =====================================================================
+       13. TELEMETRY JITTER
+       ===================================================================== */
+    function startTelemetryJitter() {
+      setInterval(() => {
+        const fps = (59.2 + Math.random() * 1.6).toFixed(1);
+        state.latency = (11.2 + Math.random() * 1.2).toFixed(1);
+        const temp = Math.round(47 + Math.random() * 3 + (state.busy ? 2 : 0));
+        $('#fps-counter').textContent = fps;
+        $('#latency-counter').textContent = `${state.latency}ms`;
+        $('#temp-counter').textContent = `${temp}°C`;
+      }, 1500);
+    }
+
+    /* =====================================================================
+       14. INIT
+       ===================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      $('#cap-label').textContent = MAX_WEIGHT;
+      $('#hint-text').textContent = DEFAULT_HINT;
+
+      initChart();
+      renderBins();
+      renderWasteDeck();
+      updateFilterButtons();
+      setupBinTargets();
+      setupCameraTarget();
+      updateStats();
+      startTelemetryJitter();
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          state.filter = e.currentTarget.dataset.filter;
+          updateFilterButtons();
+          renderWasteDeck();
+        });
+      });
+
+      // Modal
+      const modal = $('#defense-modal');
+      const closeModal = () => modal.classList.add('hidden');
+      $('#btn-defense-mode').addEventListener('click', () => modal.classList.remove('hidden'));
+      $('#close-defense-modal').addEventListener('click', closeModal);
+      $('#btn-modal-ok').addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (!modal.classList.contains('hidden')) closeModal();
+          else if (state.selected) clearSelection();
+        }
+      });
+
+      $('#btn-auto-demo').addEventListener('click', toggleAutoDemo);
+
+      $('#btn-reset').addEventListener('click', () => {
+        state.counts = { general: 0, paper: 0, plastic: 0 };
+        state.weight = { general: 0, paper: 0, plastic: 0 };
+        state.manualCorrect = 0;
+        state.manualWrong = 0;
+        updateStats();
+        showToast('已重置統計並清空所有垃圾桶', 'info');
+        addLog('↺ 統計重置，垃圾桶已清運', 'info');
+      });
+    });
+  </script>
+</body>
+</html>
