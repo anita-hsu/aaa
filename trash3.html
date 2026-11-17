@@ -51,6 +51,10 @@
       40%, 60% { transform: translate3d(6px, 0, 0); }
     }
 
+    /* 切換站點時，垃圾桶與統計區的轉場 */
+    .site-switch { animation: site-in 0.35s ease-out; }
+    @keyframes site-in { from { opacity: 0.15; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+
     .trash-card.selected {
       border-color: #22d3ee !important;
       box-shadow: 0 0 0 2px rgba(34,211,238,0.6), 0 0 18px rgba(34,211,238,0.35);
@@ -84,11 +88,11 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .scanline, .radar-sweep, .bb-analyzing { animation: none; }
+      .scanline, .radar-sweep, .bb-analyzing, .site-switch { animation: none; }
     }
   </style>
 
-    <style>
+  <style>
     /* 共用元件樣式（純 CSS，不依賴 Tailwind @apply） */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
@@ -121,6 +125,23 @@
       padding: 0.375rem 0.5rem; font-size: 0.75rem; line-height: 1rem;
     }
     .field:focus { outline: none; border-color: #06b6d4; }
+
+    /* 站點分頁 */
+    #loc-tabs .loc-tab {
+      display: inline-flex; align-items: center; gap: 0.375rem; flex-shrink: 0;
+      padding: 0.375rem 0.7rem; border-radius: 0.625rem;
+      font-size: 0.75rem; line-height: 1rem; font-weight: 500; white-space: nowrap;
+      color: #94a3b8; background-color: rgba(15, 23, 42, 0.6);
+      border: 1px solid #1e293b; cursor: pointer;
+      transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+    }
+    #loc-tabs .loc-tab:hover { color: #e2e8f0; border-color: #334155; }
+    #loc-tabs .loc-tab.active {
+      color: #ede9fe; background-color: rgba(139, 92, 246, 0.16);
+      border-color: rgba(139, 92, 246, 0.6); box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
+    }
+    #loc-tabs .loc-tab.pending { border-style: dashed; border-color: rgba(167, 139, 250, 0.75); color: #c4b5fd; }
+    #loc-tabs .loc-tab:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 1px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col select-none">
@@ -181,7 +202,7 @@
         </div>
         <div class="flex gap-3 items-start">
           <span class="w-7 h-7 shrink-0 rounded-full bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-sm font-bold flex items-center justify-center">3</span>
-          <div><div class="text-sm font-semibold text-slate-100">查看結果</div><div class="panel-sub">桶蓋開啟、統計即時更新，所有紀錄都會進入後台分析</div></div>
+          <div><div class="text-sm font-semibold text-slate-100">查看結果</div><div class="panel-sub">桶蓋開啟、統計即時更新；在「智慧垃圾桶」切換站點，每站的垃圾桶各自獨立</div></div>
         </div>
       </div>
       <button id="guide-close" class="btn bg-cyan-500 border-cyan-400 text-slate-950 hover:bg-cyan-400 font-semibold self-end md:self-center">
@@ -229,7 +250,7 @@
           </div>
 
           <div id="cam-status" class="absolute top-2 left-2 text-[10px] font-mono-tech text-slate-500 z-10">IDLE</div>
-          <div class="absolute top-2 right-2 text-[10px] font-mono-tech text-slate-600 z-10">CAM_01 · 1080P</div>
+          <div id="cam-id" class="absolute top-2 right-2 text-[10px] font-mono-tech text-slate-600 z-10">CAM_01 · 1080P</div>
           <div id="cam-progress" class="absolute bottom-0 left-0 h-1 bg-cyan-400" style="width:0%"></div>
 
           <div id="camera-placeholder" class="text-center z-10 pointer-events-none transition-opacity duration-300 px-4">
@@ -257,42 +278,49 @@
         </div>
       </section>
 
-      <!-- Stats -->
+      <!-- Stats（顯示目前站點） -->
       <section class="panel order-3">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="panel-title"><i class="fa-solid fa-chart-pie text-cyan-400"></i>即時分類統計</h2>
-          <span class="text-[11px] text-slate-500 font-mono-tech">Model Acc 98.6%</span>
+        <div class="flex justify-between items-center gap-2 mb-4">
+          <h2 class="panel-title flex-wrap">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i>即時分類統計
+            <span class="inline-flex items-center gap-1 text-[11px] font-medium text-violet-200 bg-violet-500/10 border border-violet-500/30 rounded-md px-1.5 py-0.5">
+              <i class="fa-solid fa-location-dot text-violet-400"></i><span id="stats-site">--</span>
+            </span>
+          </h2>
+          <span class="text-[11px] text-slate-500 font-mono-tech shrink-0">Model Acc 98.6%</span>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 text-center mb-4">
-          <div class="rounded-xl bg-slate-900/70 border border-slate-800 py-2.5">
-            <div class="text-[11px] text-slate-500">總投遞</div>
-            <div id="total-items" class="text-lg font-bold text-white">0</div>
+        <div id="stats-body">
+          <div class="grid grid-cols-3 gap-2 text-center mb-4">
+            <div class="rounded-xl bg-slate-900/70 border border-slate-800 py-2.5">
+              <div class="text-[11px] text-slate-500">此站投遞</div>
+              <div id="total-items" class="text-lg font-bold text-white">0</div>
+            </div>
+            <div class="rounded-xl bg-slate-900/70 border border-slate-800 py-2.5">
+              <div class="text-[11px] text-slate-500">此站重量</div>
+              <div id="total-weight" class="text-lg font-bold text-white">0.00 kg</div>
+            </div>
+            <div class="rounded-xl bg-slate-900/70 border border-slate-800 py-2.5">
+              <div class="text-[11px] text-slate-500">手動正確率</div>
+              <div id="acc-manual" class="text-lg font-bold text-emerald-300">--</div>
+            </div>
           </div>
-          <div class="rounded-xl bg-slate-900/70 border border-slate-800 py-2.5">
-            <div class="text-[11px] text-slate-500">總重量</div>
-            <div id="total-weight" class="text-lg font-bold text-white">0.00 kg</div>
-          </div>
-          <div class="rounded-xl bg-slate-900/70 border border-slate-800 py-2.5">
-            <div class="text-[11px] text-slate-500">手動正確率</div>
-            <div id="acc-manual" class="text-lg font-bold text-emerald-300">--</div>
-          </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-4 items-center">
-          <div class="h-32 relative"><canvas id="category-chart"></canvas></div>
-          <div class="space-y-2 text-xs">
-            <div class="flex items-center justify-between px-2.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
-              <span class="flex items-center gap-2 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>一般垃圾</span>
-              <span id="cnt-general" class="font-bold font-mono-tech text-slate-200">0</span>
-            </div>
-            <div class="flex items-center justify-between px-2.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
-              <span class="flex items-center gap-2 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>紙類</span>
-              <span id="cnt-paper" class="font-bold font-mono-tech text-blue-400">0</span>
-            </div>
-            <div class="flex items-center justify-between px-2.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
-              <span class="flex items-center gap-2 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>塑膠類</span>
-              <span id="cnt-plastic" class="font-bold font-mono-tech text-amber-400">0</span>
+          <div class="grid grid-cols-2 gap-4 items-center">
+            <div class="h-32 relative"><canvas id="category-chart"></canvas></div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center justify-between px-2.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                <span class="flex items-center gap-2 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>可回收</span>
+                <span id="cnt-recyclable" class="font-bold font-mono-tech text-emerald-400">0</span>
+              </div>
+              <div class="flex items-center justify-between px-2.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                <span class="flex items-center gap-2 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>不可回收</span>
+                <span id="cnt-nonrecyclable" class="font-bold font-mono-tech text-slate-200">0</span>
+              </div>
+              <div class="flex items-center justify-between px-2.5 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <span class="flex items-center gap-2 text-emerald-200"><i class="fa-solid fa-recycle text-emerald-400 text-[11px]"></i>回收比例</span>
+                <span id="rec-rate" class="font-bold font-mono-tech text-emerald-300">--</span>
+              </div>
             </div>
           </div>
         </div>
@@ -310,19 +338,19 @@
     <!-- RIGHT -->
     <div class="order-2 lg:order-none lg:col-span-7 flex flex-col gap-5">
 
-      <!-- Bins -->
+      <!-- Bins（每個站點各自一組） -->
       <section class="panel">
-        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-          <div>
-            <h2 class="panel-title"><i class="fa-solid fa-boxes-packing text-cyan-400"></i>智慧垃圾桶</h2>
-            <p class="panel-sub mt-0.5">每桶容量 <span id="cap-label"></span> kg · 填充 90% 會亮黃燈提醒清運</p>
-          </div>
-          <label class="flex items-center gap-2 text-xs text-slate-400">
-            <i class="fa-solid fa-location-dot text-violet-400"></i>目前站點
-            <select id="loc-select" class="field"></select>
-          </label>
+        <div class="mb-3">
+          <h2 class="panel-title flex-wrap">
+            <i class="fa-solid fa-boxes-packing text-cyan-400"></i>智慧垃圾桶
+            <span class="inline-flex items-center gap-1 text-[11px] font-medium text-violet-200 bg-violet-500/10 border border-violet-500/30 rounded-md px-1.5 py-0.5">
+              <i class="fa-solid fa-location-dot text-violet-400"></i><span id="bins-site">--</span>
+            </span>
+          </h2>
+          <p class="panel-sub mt-1">每個站點都有自己的一組垃圾桶 · 此站每桶容量 <span id="cap-label" class="text-slate-300 font-mono-tech"></span> kg · 填充 90% 會亮黃燈提醒清運</p>
         </div>
-        <div id="bins-grid" class="grid grid-cols-3 gap-3 sm:gap-4"></div>
+        <div id="loc-tabs" role="group" aria-label="切換站點" class="flex gap-1.5 overflow-x-auto p-1 -mx-1 mb-3"></div>
+        <div id="bins-grid" class="grid grid-cols-2 gap-3 sm:gap-4"></div>
       </section>
 
       <!-- Deck -->
@@ -336,9 +364,8 @@
           </div>
           <div class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs">
             <button class="filter-btn px-3 py-1.5 rounded-lg font-medium transition" data-filter="all">全部</button>
-            <button class="filter-btn px-3 py-1.5 rounded-lg font-medium transition" data-filter="general">一般</button>
-            <button class="filter-btn px-3 py-1.5 rounded-lg font-medium transition" data-filter="paper">紙類</button>
-            <button class="filter-btn px-3 py-1.5 rounded-lg font-medium transition" data-filter="plastic">塑膠</button>
+            <button class="filter-btn px-3 py-1.5 rounded-lg font-medium transition" data-filter="recyclable">可回收</button>
+            <button class="filter-btn px-3 py-1.5 rounded-lg font-medium transition" data-filter="nonrecyclable">不可回收</button>
           </div>
         </div>
 
@@ -350,7 +377,7 @@
             <span id="hint-text"></span>
           </div>
           <button id="btn-reset" class="btn bg-slate-800/60 border-slate-700 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40">
-            <i class="fa-solid fa-rotate-right"></i>清空垃圾桶
+            <i class="fa-solid fa-rotate-right"></i>清運此站垃圾桶
           </button>
         </div>
       </section>
@@ -469,7 +496,7 @@
           <div class="h-64 relative"><canvas id="an-chart-loc"></canvas></div>
         </div>
         <div class="lg:col-span-5 panel">
-          <h3 class="panel-title mb-3"><i class="fa-solid fa-recycle text-emerald-400"></i>分類佔比（什麼最多人丟）</h3>
+          <h3 class="panel-title mb-3"><i class="fa-solid fa-recycle text-emerald-400"></i>可回收 / 不可回收佔比</h3>
           <div class="h-64 relative"><canvas id="an-chart-cat"></canvas></div>
         </div>
         <div class="lg:col-span-7 panel">
@@ -498,7 +525,7 @@
         <div class="lg:col-span-5 panel">
           <h3 class="panel-title mb-3"><i class="fa-solid fa-clipboard-list text-violet-400"></i>站點營運報表</h3>
           <div class="overflow-x-auto"><table id="an-loc-table" class="w-full text-xs text-slate-300"></table></div>
-          <p class="text-[10px] text-slate-500 mt-2">建議清運頻率＝桶容量 ÷ 該站最快累積的單一分類日均重量</p>
+          <p class="text-[10px] text-slate-500 mt-2">建議清運頻率＝該站桶容量 ÷ 該站累積最快的分類日均重量</p>
         </div>
       </div>
     </div>
@@ -515,73 +542,102 @@
     /* =====================================================================
        0. CONFIG
        ===================================================================== */
-    const MAX_WEIGHT = 6;        // 每桶容量上限 (kg)
     const CONF_THRESHOLD = 85;   // AI 開蓋信心度門檻 (%)
     const DEFAULT_HINT = '拖曳卡片到垃圾桶或 AI 鏡頭；手機請先點卡片，再點目標';
 
+    // 二分類：可回收 / 不可回收
     const CATS = {
-      general: { name: '一般垃圾桶', short: '一般', dot: 'bg-slate-400', text: 'text-slate-300', chart: '#64748b', badge: 'bg-slate-700/90 text-slate-100' },
-      paper:   { name: '紙類回收桶', short: '紙類', dot: 'bg-blue-500',  text: 'text-blue-400',  chart: '#3b82f6', badge: 'bg-blue-600/90 text-white' },
-      plastic: { name: '塑膠類桶',   short: '塑膠', dot: 'bg-amber-500', text: 'text-amber-400', chart: '#f59e0b', badge: 'bg-amber-500/90 text-slate-950' }
+      recyclable:    { name: '可回收桶',   short: '可回收',   code: 'RECYCLE',     text: 'text-emerald-400', chart: '#10b981', badge: 'bg-emerald-600/90 text-white' },
+      nonrecyclable: { name: '不可回收桶', short: '不可回收', code: 'NON_RECYCLE', text: 'text-slate-300',   chart: '#64748b', badge: 'bg-slate-600/90 text-slate-100' }
     };
     const CAT_KEYS = Object.keys(CATS);
 
     const BIN_CFG = [
-      { cat: 'general', servo: 1, label: '一般垃圾', en: 'General Waste', icon: 'fa-trash-can',
+      { cat: 'recyclable', servo: 1, label: '可回收', en: 'Recyclable', icon: 'fa-recycle',
+        wrap: 'border-emerald-900/60 hover:border-emerald-500', servoText: 'text-emerald-400',
+        lid: 'bg-emerald-900 border-emerald-700 text-emerald-200', body: 'from-emerald-950 to-slate-900 border-emerald-800',
+        iconC: 'text-emerald-400', title: 'text-emerald-100', sub: 'text-emerald-400', fill: 'bg-emerald-500', lcd: 'bg-emerald-950/80 border-emerald-900' },
+      { cat: 'nonrecyclable', servo: 2, label: '不可回收', en: 'Non-recyclable', icon: 'fa-trash-can',
         wrap: 'border-slate-700/60 hover:border-slate-500', servoText: 'text-slate-400',
         lid: 'bg-slate-700 border-slate-600 text-slate-300', body: 'from-slate-800 to-slate-900 border-slate-700',
-        iconC: 'text-slate-400', title: 'text-slate-100', sub: 'text-slate-400', fill: 'bg-slate-400', lcd: 'bg-slate-950 border-slate-800' },
-      { cat: 'paper', servo: 2, label: '紙類回收', en: 'Paper', icon: 'fa-newspaper',
-        wrap: 'border-blue-900/60 hover:border-blue-500', servoText: 'text-blue-400',
-        lid: 'bg-blue-900 border-blue-700 text-blue-200', body: 'from-blue-950 to-slate-900 border-blue-800',
-        iconC: 'text-blue-400', title: 'text-blue-100', sub: 'text-blue-400', fill: 'bg-blue-500', lcd: 'bg-blue-950/80 border-blue-900' },
-      { cat: 'plastic', servo: 3, label: '塑膠類', en: 'Plastics & PET', icon: 'fa-bottle-water',
-        wrap: 'border-amber-900/60 hover:border-amber-500', servoText: 'text-amber-400',
-        lid: 'bg-amber-900 border-amber-700 text-amber-200', body: 'from-amber-950 to-slate-900 border-amber-800',
-        iconC: 'text-amber-400', title: 'text-amber-100', sub: 'text-amber-400', fill: 'bg-amber-500', lcd: 'bg-amber-950/80 border-amber-900' }
+        iconC: 'text-slate-400', title: 'text-slate-100', sub: 'text-slate-400', fill: 'bg-slate-400', lcd: 'bg-slate-950 border-slate-800' }
+    ];
+
+    // 站點：每個站點都有「自己的一組垃圾桶」，cap = 該站每桶容量 (kg)
+    // daily / weekend / err / mix / peaks 只用來產生後台的模擬歷史資料
+    const LOCATIONS = [
+      { id: 'cafe',  name: '學生餐廳', icon: 'fa-utensils', cap: 8, daily: 60, weekend: 0.5, err: 0.12,
+        mix: { recyclable: 0.50, nonrecyclable: 0.50 },
+        peaks: [[7,0.3],[8,0.5],[11,1.6],[12,2.4],[13,1.2],[17,1.2],[18,1.8],[19,0.8]] },
+      { id: 'teach', name: '教學大樓', icon: 'fa-school', cap: 6, daily: 40, weekend: 0.2, err: 0.06,
+        mix: { recyclable: 0.70, nonrecyclable: 0.30 },
+        peaks: [[8,0.6],[9,0.8],[10,1.4],[11,0.9],[12,1.5],[13,0.8],[14,0.9],[15,1.4],[16,0.9],[17,0.6]] },
+      { id: 'lib',   name: '圖書館',   icon: 'fa-book', cap: 4, daily: 25, weekend: 0.6, err: 0.04,
+        mix: { recyclable: 0.80, nonrecyclable: 0.20 },
+        peaks: [[9,0.5],[10,0.7],[11,0.7],[13,0.8],[14,1.2],[15,1.3],[16,1.0],[19,0.9],[20,1.1],[21,0.7]] },
+      { id: 'dorm',  name: '宿舍區',   icon: 'fa-bed', cap: 8, daily: 45, weekend: 1.2, err: 0.15,
+        mix: { recyclable: 0.55, nonrecyclable: 0.45 },
+        peaks: [[7,0.5],[8,0.6],[12,0.4],[18,0.8],[19,1.0],[20,1.4],[21,1.8],[22,1.5],[23,0.8]] },
+      { id: 'gym',   name: '體育館',   icon: 'fa-dumbbell', cap: 5, daily: 20, weekend: 1.3, err: 0.08,
+        mix: { recyclable: 0.75, nonrecyclable: 0.25 },
+        peaks: [[10,0.4],[15,0.7],[16,1.3],[17,1.6],[18,1.4],[19,1.0],[20,0.6]] }
     ];
 
     /* =====================================================================
-       1. DATASET（圖片檔名不變；圖片讀不到時顯示 emoji）
+       1. DATASET（原紙類、塑膠類 → 可回收；原一般垃圾 → 不可回收）
+          圖片檔名不變；圖片讀不到時顯示 emoji
        ===================================================================== */
     const WASTE_DATA = [
-      { id: 'g1', name: '髒污塑膠餐盒',   category: 'general', conf: 98.4, weight: 0.05, img: 'dirty_plastic_box.webp', emoji: '🍱' },
-      { id: 'g2', name: '餅乾包裝',       category: 'general', conf: 96.1, weight: 0.02, img: 'cookie_package.jpg',     emoji: '🍪' },
-      { id: 'g3', name: '使用過衛生紙',   category: 'general', conf: 99.1, weight: 0.01, img: 'tissue.jpg',             emoji: '🧻' },
-      { id: 'g4', name: '塑膠吸管',       category: 'general', conf: 95.7, weight: 0.02, img: 'straw.jpg',              emoji: '🥤' },
-      { id: 'g5', name: '口罩',           category: 'general', conf: 94.8, weight: 0.01, img: 'mask.jpg',               emoji: '😷' },
-      { id: 'g6', name: '舊木筷/竹籤',    category: 'general', conf: 97.2, weight: 0.03, img: 'chopsticks.jpg',         emoji: '🥢' },
+      { id: 'g1', name: '髒污塑膠餐盒',   category: 'nonrecyclable', conf: 98.4, weight: 0.05, img: 'dirty_plastic_box.webp', emoji: '🍱' },
+      { id: 'g2', name: '餅乾包裝',       category: 'nonrecyclable', conf: 96.1, weight: 0.02, img: 'cookie_package.jpg',     emoji: '🍪' },
+      { id: 'g3', name: '使用過衛生紙',   category: 'nonrecyclable', conf: 99.1, weight: 0.01, img: 'tissue.jpg',             emoji: '🧻' },
+      { id: 'g4', name: '塑膠吸管',       category: 'nonrecyclable', conf: 95.7, weight: 0.02, img: 'straw.jpg',              emoji: '🥤' },
+      { id: 'g5', name: '口罩',           category: 'nonrecyclable', conf: 94.8, weight: 0.01, img: 'mask.jpg',               emoji: '😷' },
+      { id: 'g6', name: '舊木筷/竹籤',    category: 'nonrecyclable', conf: 97.2, weight: 0.03, img: 'chopsticks.jpg',         emoji: '🥢' },
 
-      { id: 'p1', name: '快遞網購紙箱',   category: 'paper',   conf: 99.5, weight: 0.35, img: 'box.webp',               emoji: '📦' },
-      { id: 'p2', name: '舊報紙雜誌',     category: 'paper',   conf: 98.8, weight: 0.20, img: 'newspaper.jpg',          emoji: '📰' },
-      { id: 'p3', name: '乾淨牛皮紙袋',   category: 'paper',   conf: 97.9, weight: 0.08, img: 'paperbag.jpg',           emoji: '🛍️' },
-      { id: 'p4', name: '辦公廢影印紙',   category: 'paper',   conf: 99.2, weight: 0.04, img: 'doc.webp',               emoji: '📄' },
-      { id: 'p5', name: '雞蛋包裝紙盒',   category: 'paper',   conf: 96.4, weight: 0.15, img: 'eggbox.png',             emoji: '🥚' },
-      { id: 'p6', name: '牛奶紙盒',       category: 'paper',   conf: 97.6, weight: 0.06, img: 'milkbox.png',            emoji: '🥛' },
+      { id: 'p1', name: '快遞網購紙箱',   category: 'recyclable', conf: 99.5, weight: 0.35, img: 'box.webp',               emoji: '📦' },
+      { id: 'p2', name: '舊報紙雜誌',     category: 'recyclable', conf: 98.8, weight: 0.20, img: 'newspaper.jpg',          emoji: '📰' },
+      { id: 'p3', name: '乾淨牛皮紙袋',   category: 'recyclable', conf: 97.9, weight: 0.08, img: 'paperbag.jpg',           emoji: '🛍️' },
+      { id: 'p4', name: '辦公廢影印紙',   category: 'recyclable', conf: 99.2, weight: 0.04, img: 'doc.webp',               emoji: '📄' },
+      { id: 'p5', name: '雞蛋包裝紙盒',   category: 'recyclable', conf: 96.4, weight: 0.15, img: 'eggbox.png',             emoji: '🥚' },
+      { id: 'p6', name: '牛奶紙盒',       category: 'recyclable', conf: 97.6, weight: 0.06, img: 'milkbox.png',            emoji: '🥛' },
 
-      { id: 'l1', name: '透明 PET 寶特瓶', category: 'plastic', conf: 99.7, weight: 0.05, img: 'waterbottle.webp',      emoji: '💧' },
-      { id: 'l2', name: '外帶塑膠飲料杯', category: 'plastic', conf: 98.1, weight: 0.03, img: 'drink.jpg',              emoji: '🧋' },
-      { id: 'l3', name: '洗髮精 HDPE 瓶', category: 'plastic', conf: 97.5, weight: 0.18, img: 'shampoo.jpg',            emoji: '🧴' },
-      { id: 'l4', name: '洗衣精塑膠罐',   category: 'plastic', conf: 96.9, weight: 0.28, img: 'washer.webp',            emoji: '🧺' },
-      { id: 'l5', name: '塑膠保鮮盒',     category: 'plastic', conf: 95.3, weight: 0.11, img: 'plasticbox.png',         emoji: '🫙' },
-      { id: 'l6', name: '彩色瓶蓋套件',   category: 'plastic', conf: 98.6, weight: 0.01, img: 'bottlecap.png',          emoji: '🔘' }
+      { id: 'l1', name: '透明 PET 寶特瓶', category: 'recyclable', conf: 99.7, weight: 0.05, img: 'waterbottle.webp',      emoji: '💧' },
+      { id: 'l2', name: '外帶塑膠飲料杯', category: 'recyclable', conf: 98.1, weight: 0.03, img: 'drink.jpg',              emoji: '🧋' },
+      { id: 'l3', name: '洗髮精 HDPE 瓶', category: 'recyclable', conf: 97.5, weight: 0.18, img: 'shampoo.jpg',            emoji: '🧴' },
+      { id: 'l4', name: '洗衣精塑膠罐',   category: 'recyclable', conf: 96.9, weight: 0.28, img: 'washer.webp',            emoji: '🧺' },
+      { id: 'l5', name: '塑膠保鮮盒',     category: 'recyclable', conf: 95.3, weight: 0.11, img: 'plasticbox.png',         emoji: '🫙' },
+      { id: 'l6', name: '彩色瓶蓋套件',   category: 'recyclable', conf: 98.6, weight: 0.01, img: 'bottlecap.png',          emoji: '🔘' }
     ];
 
     /* =====================================================================
        2. STATE & HELPERS
        ===================================================================== */
+    const $ = (sel) => document.querySelector(sel);
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const binEl = (cat) => document.getElementById(`bin-${cat}`);
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const zeroCats = () => Object.fromEntries(CAT_KEYS.map(c => [c, 0]));
+    const sumVals = (obj) => Object.values(obj).reduce((a, b) => a + b, 0);
+    const locById = (id) => LOCATIONS.find(l => l.id === id);
+    const locName = (id) => locById(id)?.name ?? id;
+
+    // 每個站點各自的垃圾桶狀態（件數、重量、手動測驗成績）
+    const newSite = () => ({ counts: zeroCats(), weight: zeroCats(), manualCorrect: 0, manualWrong: 0 });
+
     const state = {
-      counts: { general: 0, paper: 0, plastic: 0 },
-      weight: { general: 0, paper: 0, plastic: 0 },
-      manualCorrect: 0, manualWrong: 0,
+      loc: LOCATIONS[0].id,      // 目前站點
+      pendingLoc: null,          // AI 辨識中點了其他站點 → 辨識完再切換
+      sites: Object.fromEntries(LOCATIONS.map(l => [l.id, newSite()])),
       dragItem: null, selected: null, busy: false, filter: 'all',
       demoTimer: null, toastTimer: null, camResetTimer: null,
       latency: 11.8, chart: null
     };
 
-    const $ = (sel) => document.querySelector(sel);
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-    const binEl = (cat) => document.getElementById(`bin-${cat}`);
+    const curLoc    = () => locById(state.loc);
+    const curSite   = () => state.sites[state.loc];
+    const fits      = (item) => curSite().weight[item.category] + item.weight <= curLoc().cap + 1e-9;
+    const fillRatio = (locId, cat) => state.sites[locId].weight[cat] / locById(locId).cap;
 
     function itemVisual(item, emojiSize) {
       return `<span class="${emojiSize} leading-none">${item.emoji}</span>
@@ -642,20 +698,20 @@
       state.chart = new Chart(document.getElementById('category-chart'), {
         type: 'doughnut',
         data: {
-          labels: ['一般垃圾', '紙類', '塑膠類'],
-          datasets: [{ data: [0, 0, 0], backgroundColor: CAT_KEYS.map(c => CATS[c].chart), borderWidth: 2, borderColor: '#0f172a' }]
+          labels: CAT_KEYS.map(c => CATS[c].short),
+          datasets: [{ data: CAT_KEYS.map(() => 0), backgroundColor: CAT_KEYS.map(c => CATS[c].chart), borderWidth: 2, borderColor: '#0f172a' }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
       });
     }
 
     /* =====================================================================
-       5. RENDER BINS & DECK
+       5. RENDER BINS / SITE TABS / DECK
        ===================================================================== */
     function renderBins() {
       $('#bins-grid').innerHTML = BIN_CFG.map(b => `
-        <div id="bin-${b.cat}" data-category="${b.cat}" role="button" tabindex="0" aria-label="${b.label}"
-             class="bin-container rounded-2xl p-2.5 sm:p-3 border bg-slate-900/50 ${b.wrap} transition-colors duration-300 relative group flex flex-col justify-between min-h-[230px] cursor-pointer">
+        <div id="bin-${b.cat}" data-category="${b.cat}" role="button" tabindex="0" aria-label="${b.label}垃圾桶"
+             class="bin-container rounded-2xl p-3 border bg-slate-900/50 ${b.wrap} transition-colors duration-300 relative group flex flex-col justify-between min-h-[240px] cursor-pointer">
           <div class="flex justify-between items-center text-[10px] font-mono-tech mb-2 gap-1">
             <div class="flex items-center gap-1">
               <span class="led-light w-2 h-2 rounded-full bg-slate-600"></span>
@@ -670,9 +726,9 @@
             </div>
             <div class="w-full flex-1 bg-gradient-to-b ${b.body} border rounded-b-lg relative overflow-hidden flex flex-col items-center justify-center p-2 text-center shadow-inner">
               <div class="fill-level absolute bottom-0 left-0 right-0 ${b.fill} opacity-25 transition-all duration-500" style="height:0%"></div>
-              <i class="fa-solid ${b.icon} text-2xl sm:text-3xl ${b.iconC} mb-1.5 group-hover:scale-110 transition-transform relative"></i>
-              <span class="font-bold text-sm sm:text-base ${b.title} relative">${b.label}</span>
-              <span class="text-[10px] ${b.sub} relative hidden sm:block">${b.en}</span>
+              <i class="fa-solid ${b.icon} text-3xl sm:text-4xl ${b.iconC} mb-1.5 group-hover:scale-110 transition-transform relative"></i>
+              <span class="font-bold text-base sm:text-lg ${b.title} relative">${b.label}</span>
+              <span class="text-[10px] ${b.sub} relative">${b.en}</span>
               <span class="fill-pct text-[10px] font-mono-tech text-slate-400 relative mt-1">FILL 0%</span>
             </div>
           </div>
@@ -681,6 +737,16 @@
             <span class="lcd-text text-slate-400">READY (0.00 kg)</span>
           </div>
         </div>`).join('');
+    }
+
+    function renderLocTabs() {
+      $('#loc-tabs').innerHTML = LOCATIONS.map(l => `
+        <button type="button" class="loc-tab" data-loc="${l.id}" aria-pressed="false">
+          <i class="fa-solid ${l.icon} text-[11px]"></i>
+          <span>${l.name}</span>
+          <span class="loc-dot w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          <span class="loc-count font-mono-tech text-[10px] opacity-70">0</span>
+        </button>`).join('');
     }
 
     function renderWasteDeck() {
@@ -782,12 +848,12 @@
     }
 
     /* =====================================================================
-       7. BIN VISUAL STATES
+       7. BIN VISUAL STATES（一律顯示目前站點的桶）
        ===================================================================== */
     function setBinIdle(bin) {
       const cat = bin.dataset.category;
-      const w = state.weight[cat];
-      const ratio = Math.min(w / MAX_WEIGHT, 1);
+      const w = curSite().weight[cat];
+      const ratio = Math.min(w / curLoc().cap, 1);
 
       bin.classList.remove('open');
       const dist = bin.querySelector('.ultra-dist');
@@ -814,6 +880,14 @@
       }
     }
 
+    function openBin(bin) {
+      bin.classList.add('open');
+      bin.querySelector('.led-light').className = 'led-light w-2 h-2 rounded-full bg-emerald-500 glow-green';
+      const lcd = bin.querySelector('.lcd-text');
+      lcd.textContent = 'MATCH: OPENING LID';
+      lcd.className = 'lcd-text text-emerald-400';
+    }
+
     function setBinPreview(bin, item) {
       const dist = bin.querySelector('.ultra-dist');
       dist.textContent = '08cm → Trigger';
@@ -821,16 +895,18 @@
 
       const led = bin.querySelector('.led-light');
       const lcd = bin.querySelector('.lcd-text');
-      if (item.category === bin.dataset.category) {
-        bin.classList.add('open');
-        led.className = 'led-light w-2 h-2 rounded-full bg-emerald-500 glow-green';
-        lcd.textContent = 'MATCH: OPENING LID';
-        lcd.className = 'lcd-text text-emerald-400';
-      } else {
+      if (item.category !== bin.dataset.category) {
         triggerShake(bin);
         led.className = 'led-light w-2 h-2 rounded-full bg-rose-500';
         lcd.textContent = 'MISMATCH WARNING!';
         lcd.className = 'lcd-text text-rose-400 animate-pulse';
+      } else if (!fits(item)) {
+        // 容量不足：不開蓋
+        led.className = 'led-light w-2 h-2 rounded-full bg-rose-500 animate-pulse';
+        lcd.textContent = 'FULL: LID LOCKED';
+        lcd.className = 'lcd-text text-rose-400';
+      } else {
+        openBin(bin);
       }
     }
 
@@ -841,25 +917,28 @@
     }
 
     /* =====================================================================
-       8. CORE LOGIC
+       8. CORE LOGIC（投遞一律記到「目前站點」的垃圾桶）
        ===================================================================== */
     function depositItem(item, bin, source) {
       const cat = item.category;
-      if (state.weight[cat] + item.weight > MAX_WEIGHT + 1e-9) {
+      const loc = curLoc();
+      const site = curSite();
+
+      if (!fits(item)) {
         playSound('error');
         triggerShake(bin);
-        showToast(`${CATS[cat].name}已滿，請先清空垃圾桶`, 'error');
-        addLog(`⚠ ${CATS[cat].name}容量已滿，拒絕投遞「${item.name}」`, 'warn');
+        showToast(`「${loc.name}」的${CATS[cat].name}已滿，請先清運`, 'error');
+        addLog(`⚠ [${loc.name}] ${CATS[cat].name}已滿，拒收「${item.name}」`, 'warn');
         recordEvent(item, source, true, { full: true });
         return false;
       }
 
-      state.counts[cat]++;
-      state.weight[cat] = Math.round((state.weight[cat] + item.weight) * 1000) / 1000;
+      site.counts[cat]++;
+      site.weight[cat] = Math.round((site.weight[cat] + item.weight) * 1000) / 1000;
 
       playSound('success');
-      showToast(`投遞成功：${item.name} → ${CATS[cat].name}`, 'success');
-      addLog(`✓ [${source}] ${item.name} → ${CATS[cat].short} (${item.conf}%)`, 'success');
+      showToast(`投遞成功：${item.name} → ${loc.name}・${CATS[cat].name}`, 'success');
+      addLog(`✓ [${source}·${loc.name}] ${item.name} → ${CATS[cat].short} (${item.conf}%)`, 'success');
       recordEvent(item, source, true);
       updateStats();
       return true;
@@ -867,19 +946,20 @@
 
     function manualDrop(item, bin) {
       if (state.busy) return;
+      const site = curSite();
       const binCat = bin.dataset.category;
 
       if (item.category === binCat) {
-        state.manualCorrect++;
-        bin.classList.add('open');
+        site.manualCorrect++;
+        if (fits(item)) openBin(bin);          // 滿桶時不開蓋
         depositItem(item, bin, '手動');
         setTimeout(() => setBinIdle(bin), 700);
       } else {
-        state.manualWrong++;
+        site.manualWrong++;
         triggerShake(bin);
         playSound('error');
         showToast(`分類錯誤！「${item.name}」應投入${CATS[item.category].name}`, 'error');
-        addLog(`✗ ${item.name} 誤投${CATS[binCat].short}（正確：${CATS[item.category].short}）`, 'error');
+        addLog(`✗ [${curLoc().name}] ${item.name} 誤投${CATS[binCat].short}（正確：${CATS[item.category].short}）`, 'error');
         recordEvent(item, '手動', false, { wrongBin: binCat });
         setTimeout(() => setBinIdle(bin), 600);
       }
@@ -908,7 +988,7 @@
       $('#bb-conf').textContent = `${item.conf}%`;
       $('#target-class-display').textContent = item.name;
       $('#target-class-display').className = CATS[item.category].text;
-      setCamStatus(`CLASS=${item.category.toUpperCase()} · ${item.conf}% · ${state.latency}ms`, 'text-emerald-300');
+      setCamStatus(`CLASS=${CATS[item.category].code} · ${item.conf}% · ${state.latency}ms`, 'text-emerald-300');
 
       const bin = binEl(item.category);
       if (item.conf < CONF_THRESHOLD) {
@@ -927,6 +1007,7 @@
       prog.style.width = '0%';
       state.busy = false;
       scheduleCameraReset(900);
+      if (state.pendingLoc) setLocation(state.pendingLoc);   // 辨識中有點其他站點 → 現在切換
       return true;
     }
 
@@ -1055,24 +1136,45 @@
        11. UI UPDATES
        ===================================================================== */
     function updateStats() {
-      CAT_KEYS.forEach(c => { $(`#cnt-${c}`).textContent = state.counts[c]; });
+      const site = curSite();
+      CAT_KEYS.forEach(c => { $(`#cnt-${c}`).textContent = site.counts[c]; });
 
       if (state.chart) {
-        state.chart.data.datasets[0].data = CAT_KEYS.map(c => state.counts[c]);
+        state.chart.data.datasets[0].data = CAT_KEYS.map(c => site.counts[c]);
         state.chart.update();
       }
 
-      const totalItems = Object.values(state.counts).reduce((a, b) => a + b, 0);
-      const totalW = Object.values(state.weight).reduce((a, b) => a + b, 0);
+      const totalItems = sumVals(site.counts);
+      const totalW = sumVals(site.weight);
       $('#total-items').textContent = totalItems;
       $('#total-weight').textContent = `${totalW.toFixed(2)} kg`;
+      $('#rec-rate').textContent = totalItems ? `${Math.round(site.counts.recyclable / totalItems * 100)}%` : '--';
 
-      const n = state.manualCorrect + state.manualWrong;
-      $('#acc-manual').textContent = n ? `${Math.round(state.manualCorrect / n * 100)}%` : '--';
-      $('#acc-manual').title = n ? `${state.manualCorrect} / ${n} 次正確` : '';
+      const n = site.manualCorrect + site.manualWrong;
+      $('#acc-manual').textContent = n ? `${Math.round(site.manualCorrect / n * 100)}%` : '--';
+      $('#acc-manual').title = n ? `${site.manualCorrect} / ${n} 次正確` : '';
 
       document.querySelectorAll('.bin-container').forEach(bin => {
         if (!bin.classList.contains('open') && !bin._dc) setBinIdle(bin);
+      });
+      updateLocTabs();
+    }
+
+    // 站點分頁：數字＝該站已投件數；點的顏色＝最滿的那一桶狀態
+    function updateLocTabs() {
+      document.querySelectorAll('.loc-tab').forEach(tab => {
+        const id = tab.dataset.loc;
+        const site = state.sites[id];
+        const n = sumVals(site.counts);
+        const fill = Math.max(...CAT_KEYS.map(c => fillRatio(id, c)));
+        const active = id === state.loc;
+        tab.classList.toggle('active', active);
+        tab.classList.toggle('pending', id === state.pendingLoc);
+        tab.setAttribute('aria-pressed', String(active));
+        tab.querySelector('.loc-count').textContent = n;
+        tab.querySelector('.loc-dot').className = 'loc-dot w-1.5 h-1.5 rounded-full ' +
+          (fill >= 0.99 ? 'bg-rose-500 animate-pulse' : fill >= 0.9 ? 'bg-amber-400' : n ? 'bg-cyan-400' : 'bg-slate-600');
+        tab.title = `${locName(id)}：` + CAT_KEYS.map(c => `${CATS[c].short} ${Math.round(Math.min(fillRatio(id, c), 1) * 100)}%`).join('、');
       });
     }
 
@@ -1113,7 +1215,55 @@
     }
 
     /* =====================================================================
-       12. AUTO DEMO
+       12. 站點切換（每個站點一組獨立的垃圾桶）
+       ===================================================================== */
+    function setLocation(id) {
+      if (!locById(id)) return;
+
+      // AI 辨識中：先記下來，等這一件投完再切換，避免投到錯的站點
+      if (state.busy) {
+        state.pendingLoc = id === state.loc ? null : id;
+        updateLocTabs();
+        if (state.pendingLoc) showToast(`AI 辨識中，完成後切換到「${locName(id)}」`, 'info');
+        return;
+      }
+      state.pendingLoc = null;
+      if (id === state.loc) { updateLocTabs(); return; }
+
+      state.loc = id;
+      document.querySelectorAll('.bin-container').forEach(bin => {
+        bin._dc = 0;
+        bin.classList.remove('open', 'shake');
+      });
+      clearTimeout(state.camResetTimer);
+      if (!state.selected) resetCamera();
+      refreshSiteUI(true);
+
+      const loc = curLoc();
+      addLog(`📍 切換站點：${loc.name}`, 'info');
+      showToast(`已切換至「${loc.name}」的垃圾桶（每桶 ${loc.cap} kg）`, 'info');
+    }
+
+    function refreshSiteUI(animate = false) {
+      const loc = curLoc();
+      $('#bins-site').textContent = loc.name;
+      $('#stats-site').textContent = loc.name;
+      $('#cap-label').textContent = loc.cap;
+      $('#cam-id').textContent = `CAM_${loc.id.toUpperCase()} · 1080P`;
+      updateStats();   // 垃圾桶、統計、圓餅圖、站點分頁一起更新
+
+      if (animate) {
+        ['#bins-grid', '#stats-body'].forEach(sel => {
+          const el = $(sel);
+          el.classList.remove('site-switch');
+          void el.offsetWidth;
+          el.classList.add('site-switch');
+        });
+      }
+    }
+
+    /* =====================================================================
+       13. AUTO DEMO（在目前站點投遞；中途切站會接著在新站點跑）
        ===================================================================== */
     function setDemoButton(running) {
       const btn = $('#btn-auto-demo');
@@ -1140,8 +1290,8 @@
 
       const tick = () => {
         if (state.busy) return;
-        const pool = WASTE_DATA.filter(i => state.weight[i.category] + i.weight <= MAX_WEIGHT + 1e-9);
-        if (!pool.length) { stopAutoDemo('所有垃圾桶已滿，自動展示已停止', 'error'); return; }
+        const pool = WASTE_DATA.filter(i => fits(i));
+        if (!pool.length) { stopAutoDemo(`「${curLoc().name}」的垃圾桶已滿，自動展示已停止`, 'error'); return; }
         aiAutoSort(pool[Math.floor(Math.random() * pool.length)]);
       };
       tick();
@@ -1149,7 +1299,7 @@
     }
 
     /* =====================================================================
-       13. TELEMETRY JITTER
+       14. TELEMETRY JITTER
        ===================================================================== */
     function startTelemetryJitter() {
       setInterval(() => {
@@ -1161,37 +1311,19 @@
     }
 
     /* =====================================================================
-       14. 後台分析模組 (Admin Analytics)
+       15. 後台分析模組 (Admin Analytics)
        ===================================================================== */
-    const LOCATIONS = [
-      { id: 'cafe',  name: '學生餐廳', daily: 60, weekend: 0.5, err: 0.12,
-        mix: { general: 0.50, paper: 0.15, plastic: 0.35 },
-        peaks: [[7,0.3],[8,0.5],[11,1.6],[12,2.4],[13,1.2],[17,1.2],[18,1.8],[19,0.8]] },
-      { id: 'teach', name: '教學大樓', daily: 40, weekend: 0.2, err: 0.06,
-        mix: { general: 0.30, paper: 0.45, plastic: 0.25 },
-        peaks: [[8,0.6],[9,0.8],[10,1.4],[11,0.9],[12,1.5],[13,0.8],[14,0.9],[15,1.4],[16,0.9],[17,0.6]] },
-      { id: 'lib',   name: '圖書館',   daily: 25, weekend: 0.6, err: 0.04,
-        mix: { general: 0.20, paper: 0.60, plastic: 0.20 },
-        peaks: [[9,0.5],[10,0.7],[11,0.7],[13,0.8],[14,1.2],[15,1.3],[16,1.0],[19,0.9],[20,1.1],[21,0.7]] },
-      { id: 'dorm',  name: '宿舍區',   daily: 45, weekend: 1.2, err: 0.15,
-        mix: { general: 0.45, paper: 0.20, plastic: 0.35 },
-        peaks: [[7,0.5],[8,0.6],[12,0.4],[18,0.8],[19,1.0],[20,1.4],[21,1.8],[22,1.5],[23,0.8]] },
-      { id: 'gym',   name: '體育館',   daily: 20, weekend: 1.3, err: 0.08,
-        mix: { general: 0.25, paper: 0.10, plastic: 0.65 },
-        peaks: [[10,0.4],[15,0.7],[16,1.3],[17,1.6],[18,1.4],[19,1.0],[20,0.6]] }
-    ];
-
     const WEEKDAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
-    const AN = { live: [], sim: [], charts: {}, currentLoc: 'cafe', STORE: 'smartbin_events_v1' };
+    const AN = { live: [], sim: [], charts: {}, STORE: 'smartbin_events_v2' };   // v2：二分類格式
 
-    const locName = id => LOCATIONS.find(l => l.id === id)?.name ?? id;
-    const pad2 = n => String(n).padStart(2, '0');
     const fmtHour = h => `${pad2(h)}:00`;
     const pct = (a, b) => b ? `${(a / b * 100).toFixed(1)}%` : '--';
 
     function loadLive() {
-      try { AN.live = JSON.parse(localStorage.getItem(AN.STORE)) || []; }
-      catch { AN.live = []; }
+      try {
+        const raw = JSON.parse(localStorage.getItem(AN.STORE)) || [];
+        AN.live = raw.filter(e => CATS[e.cat] && locById(e.loc));
+      } catch { AN.live = []; }
     }
     function saveLive() {
       try { localStorage.setItem(AN.STORE, JSON.stringify(AN.live.slice(-5000))); } catch { /* ignore */ }
@@ -1199,7 +1331,7 @@
 
     function recordEvent(item, source, ok, extra = {}) {
       AN.live.push({
-        t: Date.now(), loc: AN.currentLoc, cat: item.category, id: item.id, name: item.name,
+        t: Date.now(), loc: state.loc, cat: item.category, id: item.id, name: item.name,
         w: item.weight, src: source, ok, full: !!extra.full, wrongBin: extra.wrongBin || null, sim: false
       });
       saveLive();
@@ -1309,9 +1441,9 @@
 
       const byLoc = {};
       LOCATIONS.forEach(l => {
-        byLoc[l.id] = { total: 0, w: 0, wrong: 0, full: 0, general: 0, paper: 0, plastic: 0, kg: { general: 0, paper: 0, plastic: 0 } };
+        byLoc[l.id] = { total: 0, w: 0, wrong: 0, full: 0, ...zeroCats(), kg: zeroCats() };
       });
-      const byCat = { general: 0, paper: 0, plastic: 0 };
+      const byCat = zeroCats();
       const byHour = Array(24).fill(0);
       const heat = Array.from({ length: 7 }, () => Array(24).fill(0));
       const byItem = {};
@@ -1343,7 +1475,7 @@
         d.setDate(start.getDate() + i);
         const key = d.toDateString();
         dayKeys.push({ key, label: `${d.getMonth() + 1}/${d.getDate()}`, weekend: d.getDay() === 0 || d.getDay() === 6 });
-        daily[key] = { general: 0, paper: 0, plastic: 0, total: 0 };
+        daily[key] = { ...zeroCats(), total: 0 };
       }
       okEv.forEach(e => {
         const k = new Date(e.t).toDateString();
@@ -1359,7 +1491,6 @@
       const peakSum = peak.reduce((s, h) => s + byHour[h], 0);
 
       const locRank = LOCATIONS.map(l => ({ l, n: byLoc[l.id].total })).filter(x => x.n > 0).sort((a, b) => b.n - a.n);
-      const catRank = CAT_KEYS.map(c => ({ c, n: byCat[c] })).sort((a, b) => b.n - a.n);
       const attempts = total + wrongEv.length;
 
       // KPI
@@ -1368,7 +1499,8 @@
         kpiCard('fa-weight-hanging', 'text-sky-400', '總重量', `${totalW.toFixed(1)} kg`, `日均 ${(totalW / days).toFixed(2)} kg`),
         kpiCard('fa-location-dot', 'text-violet-400', '最多人丟的站點', locRank[0]?.l.name ?? '--',
                 locRank[0] ? `${locRank[0].n} 件 · ${pct(locRank[0].n, total)}` : ''),
-        kpiCard('fa-recycle', 'text-emerald-400', '最多的分類', total ? CATS[catRank[0].c].short : '--', total ? pct(catRank[0].n, total) : ''),
+        kpiCard('fa-recycle', 'text-emerald-400', '可回收比例', total ? pct(byCat.recyclable, total) : '--',
+                total ? `不可回收 ${pct(byCat.nonrecyclable, total)}` : ''),
         kpiCard('fa-clock', 'text-rose-400', '高峰時段', peak.length ? hoursToRanges(peak).split('、')[0] : '--',
                 peak.length ? `高峰佔全日 ${pct(peakSum, total)}` : ''),
         kpiCard('fa-triangle-exclamation', 'text-amber-400', '誤投率', pct(wrongEv.length, attempts), `滿桶拒收 ${fullEv.length} 次`)
@@ -1383,14 +1515,14 @@
           ins.push(['fa-location-dot', 'text-violet-300',
             `最多人丟垃圾的站點是「${locRank[0].l.name}」（${locRank[0].n} 件，佔 ${pct(locRank[0].n, total)}），最少的是「${locRank.at(-1).l.name}」（${locRank.at(-1).n} 件）。`]);
         }
-        const dominant = locRank.map(x => {
-          const b = byLoc[x.l.id];
-          const c = CAT_KEYS.reduce((m, k) => (b[k] > b[m] ? k : m));
-          return `${x.l.name}以${CATS[c].short}為主（${pct(b[c], b.total)}）`;
-        });
+
+        const recRank = locRank.map(x => ({ l: x.l, r: byLoc[x.l.id].recyclable / x.n })).sort((a, b) => b.r - a.r);
         ins.push(['fa-recycle', 'text-emerald-300',
-          `整體最多人丟的分類是「${CATS[catRank[0].c].short}」（${pct(catRank[0].n, total)}）。` +
-          (dominant.length > 1 ? `${dominant.join('；')}，可依站點調整各類垃圾桶的容量配置。` : '')]);
+          `整體可回收佔 ${pct(byCat.recyclable, total)}、不可回收佔 ${pct(byCat.nonrecyclable, total)}。` +
+          (recRank.length > 1
+            ? `可回收比例最高的是「${recRank[0].l.name}」（${(recRank[0].r * 100).toFixed(1)}%），最低的是「${recRank.at(-1).l.name}」（${(recRank.at(-1).r * 100).toFixed(1)}%），可依站點調整兩種垃圾桶的容量配置。`
+            : '')]);
+
         ins.push(['fa-clock', 'text-rose-300',
           `高峰時段為 ${hoursToRanges(peak)}，佔全日投遞量 ${pct(peakSum, total)}；營運時間內的離峰時段為 ${hoursToRanges(off)}，建議安排在離峰時段清運。`]);
 
@@ -1416,16 +1548,18 @@
             (topWrong ? `，最常被丟錯的是「${topWrong[0]}」（${topWrong[1]} 次）` : '') + '，建議在該處加強分類標示或宣導。']);
         }
 
-        let fastest = null;
+        // 最快滿的桶（各站容量不同，所以用「幾天會滿」比較）
+        let urgent = null;
         LOCATIONS.forEach(l => CAT_KEYS.forEach(c => {
           const perDay = byLoc[l.id].kg[c] / days;
-          if (perDay > 0 && (!fastest || perDay > fastest.perDay)) fastest = { l, c, perDay };
+          if (perDay <= 0) return;
+          const fillDays = l.cap / perDay;
+          if (!urgent || fillDays < urgent.fillDays) urgent = { l, c, perDay, fillDays };
         }));
-        if (fastest) {
-          const fillDays = MAX_WEIGHT / fastest.perDay;
+        if (urgent) {
           ins.push(['fa-truck', 'text-sky-300',
-            `「${fastest.l.name}」的${CATS[fastest.c].short}桶累積最快（日均 ${fastest.perDay.toFixed(2)} kg），以每桶 ${MAX_WEIGHT} kg 計算，` +
-            (fillDays < 1 ? `每天需清運約 ${Math.ceil(1 / fillDays)} 次。` : `約每 ${fillDays.toFixed(1)} 天需清運一次。`)]);
+            `「${urgent.l.name}」的${CATS[urgent.c].short}桶最快滿（日均 ${urgent.perDay.toFixed(2)} kg，該站每桶 ${urgent.l.cap} kg），` +
+            (urgent.fillDays < 1 ? `每天需清運約 ${Math.ceil(1 / urgent.fillDays)} 次。` : `約每 ${urgent.fillDays.toFixed(1)} 天需清運一次。`)]);
         }
       }
       $('#an-insights').innerHTML = ins.map(([icon, color, text]) =>
@@ -1523,17 +1657,17 @@
       });
       $('#an-heatmap').innerHTML = hm + '</div>';
 
-      // 站點報表
+      // 站點報表（各站依自己的桶容量計算建議清運）
       const rows = LOCATIONS.filter(l => byLoc[l.id].total + byLoc[l.id].wrong + byLoc[l.id].full > 0).map(l => {
         const b = byLoc[l.id];
         const a = b.total + b.wrong;
         const errRate = a ? b.wrong / a : 0;
         const maxPerDay = Math.max(...CAT_KEYS.map(c => b.kg[c])) / days;
-        const fillDays = maxPerDay > 0 ? MAX_WEIGHT / maxPerDay : Infinity;
+        const fillDays = maxPerDay > 0 ? l.cap / maxPerDay : Infinity;
         const advice = !isFinite(fillDays) ? '--' : fillDays < 1 ? `每天 ${Math.ceil(1 / fillDays)} 次` : `每 ${fillDays.toFixed(1)} 天`;
         return `
           <tr class="border-t border-slate-800">
-            <td class="py-2 pr-2 text-slate-200 whitespace-nowrap">${l.name}</td>
+            <td class="py-2 pr-2 text-slate-200 whitespace-nowrap">${l.name}<span class="ml-1 text-[10px] text-slate-500 font-mono-tech">${l.cap}kg</span></td>
             <td class="py-2 px-2 text-right font-mono-tech">${b.total}</td>
             <td class="py-2 px-2 text-right font-mono-tech">${b.w.toFixed(1)}</td>
             <td class="py-2 px-2 text-right font-mono-tech ${errRate > 0.1 ? 'text-rose-400' : ''}">${a ? (errRate * 100).toFixed(1) + '%' : '--'}</td>
@@ -1590,20 +1724,20 @@
     }
 
     /* =====================================================================
-       15. INIT
+       16. INIT
        ===================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
-      $('#cap-label').textContent = MAX_WEIGHT;
       setHint(DEFAULT_HINT, false);
       setDemoButton(false);
 
       initChart();
       renderBins();
+      renderLocTabs();
       renderWasteDeck();
       updateFilterButtons();
       setupBinTargets();
       setupCameraTarget();
-      updateStats();
+      refreshSiteUI();
       startTelemetryJitter();
 
       // 使用說明（第一次開啟時顯示）
@@ -1638,30 +1772,25 @@
       $('#btn-modal-ok').addEventListener('click', closeModal);
       modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
-      // Demo / 重置
+      // 站點切換：每個站點有自己的垃圾桶
+      $('#loc-tabs').addEventListener('click', (e) => {
+        const tab = e.target.closest('.loc-tab');
+        if (tab) setLocation(tab.dataset.loc);
+      });
+
+      // Demo / 清運（只清目前站點）
       $('#btn-auto-demo').addEventListener('click', toggleAutoDemo);
       $('#btn-reset').addEventListener('click', () => {
-        state.counts = { general: 0, paper: 0, plastic: 0 };
-        state.weight = { general: 0, paper: 0, plastic: 0 };
-        state.manualCorrect = 0;
-        state.manualWrong = 0;
+        Object.assign(curSite(), newSite());
         updateStats();
-        showToast('已清空所有垃圾桶並重置統計', 'info');
-        addLog('↺ 統計重置，垃圾桶已清運', 'info');
+        showToast(`已清運「${curLoc().name}」的垃圾桶並重置該站統計`, 'info');
+        addLog(`↺ [${curLoc().name}] 垃圾桶已清運，統計重置`, 'info');
       });
 
       // 後台分析
       loadLive();
       AN.sim = generateSimData(30);
-      const opts = LOCATIONS.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
-      $('#loc-select').innerHTML = opts;
-      $('#loc-select').value = AN.currentLoc;
-      $('#an-loc').insertAdjacentHTML('beforeend', opts);
-      $('#loc-select').addEventListener('change', (e) => {
-        AN.currentLoc = e.target.value;
-        addLog(`📍 切換站點：${locName(AN.currentLoc)}`, 'info');
-        showToast(`目前站點：${locName(AN.currentLoc)}`, 'info');
-      });
+      $('#an-loc').insertAdjacentHTML('beforeend', LOCATIONS.map(l => `<option value="${l.id}">${l.name}</option>`).join(''));
       $('#btn-analytics').addEventListener('click', openAnalytics);
       $('#an-close').addEventListener('click', closeAnalytics);
       ['#an-range', '#an-loc', '#an-sim'].forEach(sel => $(sel).addEventListener('change', renderAnalytics));
