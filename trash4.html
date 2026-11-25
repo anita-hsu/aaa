@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D 智慧雙分類垃圾桶感測與自動開蓋模擬系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      background-color: #060911;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    /* Custom thin scrollbar for compact HUD panels */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.5);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="text-slate-100 antialiased select-none">
+  <div id="canvas-container">
+    <!-- Top Header & Live AI Vision HUD Banner -->
+    <header class="pointer-events-none fixed top-3 left-3 right-3 z-20 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2.5">
+      <!-- System Title Badge -->
+      <div class="pointer-events-auto flex items-center gap-3 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/70 px-4 py-2.5 shadow-xl">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold tracking-tight text-white">AI 智慧雙分類垃圾桶感測系統</h1>
+          <p class="text-[11px] text-slate-400">拖曳右側托盤垃圾靠近桶身，或點擊下方「模擬投入」測試感測與自動開蓋</p>
+        </div>
+      </div>
+
+      <!-- AI Vision Camera Recognition Status Pill -->
+      <div id="ai-hud-banner" class="pointer-events-auto flex items-center gap-3 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-slate-700/80 px-4 py-2.5 shadow-xl transition-all duration-200">
+        <span id="ai-pulse-dot" class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div class="text-xs sm:text-sm">
+          <span class="text-slate-400 font-medium">AI 視覺鏡頭辨識：</span>
+          <span id="ai-status-text" class="font-semibold text-slate-200">待機掃描中（請拖曳或模擬投入垃圾）</span>
+        </div>
+      </div>
+
+      <!-- Camera View Presets -->
+      <div class="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/70 p-1.5 shadow-xl">
+        <button data-cam="front" class="cam-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 transition">正面視角</button>
+        <button data-cam="sensor" class="cam-btn px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition">感測器特寫</button>
+        <button data-cam="top" class="cam-btn px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition">俯視內部容量</button>
+        <button data-cam="base" class="cam-btn px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition">底座重量感測</button>
+      </div>
+    </header>
+
+    <!-- Left Telemetry Sidebar: Dual-Bin Sensor Dashboard -->
+    <aside class="fixed top-36 lg:top-20 left-3 z-20 w-[calc(100vw-1.5rem)] sm:w-80 max-h-[42vh] lg:max-h-[calc(100vh-14.5rem)] overflow-y-auto space-y-2.5 pointer-events-auto">
+      <!-- Bin 1: Recyclable Telemetry Card -->
+      <div id="card-recyclable" class="rounded-2xl bg-slate-900/85 backdrop-blur-md border border-cyan-500/30 p-3.5 shadow-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+            <h2 class="text-sm font-bold text-white">左桶：可回收 (Recyclable)</h2>
+          </div>
+          <span id="rec-led-badge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            LED 綠燈・正常
+          </span>
+        </div>
+
+        <!-- Telemetry Grid -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="rounded-xl bg-slate-800/70 p-2 border border-slate-700/60">
+            <div class="text-slate-400 flex items-center justify-between">
+              <span>超音波容量</span>
+              <span id="rec-cap-val" class="font-mono font-bold text-cyan-300">12%</span>
+            </div>
+            <div class="mt-1.5 h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+              <div id="rec-cap-bar" class="h-full bg-cyan-400 transition-all duration-300" style="width: 12%"></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-slate-800/70 p-2 border border-slate-700/60">
+            <div class="text-slate-400 flex items-center justify-between">
+              <span>荷重元重量</span>
+              <span id="rec-weight-val" class="font-mono font-bold text-cyan-300">1.20 kg</span>
+            </div>
+            <div class="mt-1.5 h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+              <div id="rec-weight-bar" class="h-full bg-cyan-400 transition-all duration-300" style="width: 12%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hardware Status Row -->
+        <div class="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-slate-300 bg-slate-950/50 rounded-xl px-2.5 py-1.5 border border-slate-800">
+          <span>桶蓋：<strong id="rec-lid-status" class="text-slate-200">關閉</strong></span>
+          <span>補光燈：<strong id="rec-light-status" class="text-slate-400">待機</strong></span>
+          <span>鏡頭：<strong id="rec-cam-status" class="text-emerald-400">監測中</strong></span>
+        </div>
+
+        <!-- Threshold Test Slider & Empty Button -->
+        <div class="flex items-center gap-2 pt-0.5">
+          <input id="rec-sim-slider" type="range" min="0" max="100" value="12" title="手動調整容量/重量測試警報" class="flex-1 accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg" />
+          <button id="rec-empty-btn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-medium text-slate-200 transition">
+            清空桶內
+          </button>
+        </div>
+      </div>
+
+      <!-- Bin 2: Non-Recyclable Telemetry Card -->
+      <div id="card-general" class="rounded-2xl bg-slate-900/85 backdrop-blur-md border border-orange-500/30 p-3.5 shadow-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-orange-400 shadow-[0_0_8px_#fb923c]"></span>
+            <h2 class="text-sm font-bold text-white">右桶：不可回收 (General)</h2>
+          </div>
+          <span id="gen-led-badge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            LED 綠燈・正常
+          </span>
+        </div>
+
+        <!-- Telemetry Grid -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="rounded-xl bg-slate-800/70 p-2 border border-slate-700/60">
+            <div class="text-slate-400 flex items-center justify-between">
+              <span>超音波容量</span>
+              <span id="gen-cap-val" class="font-mono font-bold text-orange-300">18%</span>
+            </div>
+            <div class="mt-1.5 h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+              <div id="gen-cap-bar" class="h-full bg-orange-400 transition-all duration-300" style="width: 18%"></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-slate-800/70 p-2 border border-slate-700/60">
+            <div class="text-slate-400 flex items-center justify-between">
+              <span>荷重元重量</span>
+              <span id="gen-weight-val" class="font-mono font-bold text-orange-300">1.80 kg</span>
+            </div>
+            <div class="mt-1.5 h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
+              <div id="gen-weight-bar" class="h-full bg-orange-400 transition-all duration-300" style="width: 18%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hardware Status Row -->
+        <div class="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-slate-300 bg-slate-950/50 rounded-xl px-2.5 py-1.5 border border-slate-800">
+          <span>桶蓋：<strong id="gen-lid-status" class="text-slate-200">關閉</strong></span>
+          <span>補光燈：<strong id="gen-light-status" class="text-slate-400">待機</strong></span>
+          <span>鏡頭：<strong id="gen-cam-status" class="text-emerald-400">監測中</strong></span>
+        </div>
+
+        <!-- Threshold Test Slider & Empty Button -->
+        <div class="flex items-center gap-2 pt-0.5">
+          <input id="gen-sim-slider" type="range" min="0" max="100" value="18" title="手動調整容量/重量測試警報" class="flex-1 accent-orange-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg" />
+          <button id="gen-empty-btn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-medium text-slate-200 transition">
+            清空桶內
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Bottom Trash Simulation Staging & Throw Controls -->
+    <section class="fixed bottom-3 left-3 right-3 z-20 rounded-2xl bg-slate-900/88 backdrop-blur-md border border-slate-700/80 p-3 shadow-2xl pointer-events-auto">
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <!-- Trash Item Quick Throw Buttons -->
+        <div class="flex-1 overflow-x-auto">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-semibold text-slate-300">點擊垃圾項目「自動靠近並投入」，或直接在 3D 畫面拖曳右側托盤物品：</span>
+            <span class="hidden sm:inline text-[11px] text-slate-400">滿載 (≥95%) 時桶蓋將自動上鎖並亮紅燈警報</span>
+          </div>
+          <div class="grid grid-cols-4 sm:grid-cols-8 gap-1.5" id="trash-action-grid">
+            <!-- Recyclable Items -->
+            <button data-item="bottle" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-500/40 transition">
+              <span class="text-base">🧴</span>
+              <span class="text-[11px] font-semibold text-cyan-200 mt-0.5">寶特瓶</span>
+              <span class="text-[9px] text-cyan-400">可回收・0.3kg</span>
+            </button>
+            <button data-item="can" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-500/40 transition">
+              <span class="text-base">🥫</span>
+              <span class="text-[11px] font-semibold text-cyan-200 mt-0.5">鋁罐</span>
+              <span class="text-[9px] text-cyan-400">可回收・0.2kg</span>
+            </button>
+            <button data-item="box" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-500/40 transition">
+              <span class="text-base">📦</span>
+              <span class="text-[11px] font-semibold text-cyan-200 mt-0.5">紙箱</span>
+              <span class="text-[9px] text-cyan-400">可回收・0.6kg</span>
+            </button>
+            <button data-item="glass" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-500/40 transition">
+              <span class="text-base">🍾</span>
+              <span class="text-[11px] font-semibold text-cyan-200 mt-0.5">玻璃瓶</span>
+              <span class="text-[9px] text-cyan-400">可回收・0.8kg</span>
+            </button>
+
+            <!-- Non-Recyclable Items -->
+            <button data-item="tissue" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/70 border border-orange-500/40 transition">
+              <span class="text-base">🧻</span>
+              <span class="text-[11px] font-semibold text-orange-200 mt-0.5">衛生紙團</span>
+              <span class="text-[9px] text-orange-400">不可回收・0.2kg</span>
+            </button>
+            <button data-item="banana" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/70 border border-orange-500/40 transition">
+              <span class="text-base">🍌</span>
+              <span class="text-[11px] font-semibold text-orange-200 mt-0.5">廚餘果皮</span>
+              <span class="text-[9px] text-orange-400">不可回收・0.5kg</span>
+            </button>
+            <button data-item="bag" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/70 border border-orange-500/40 transition">
+              <span class="text-base">🛍️</span>
+              <span class="text-[11px] font-semibold text-orange-200 mt-0.5">髒塑膠袋</span>
+              <span class="text-[9px] text-orange-400">不可回收・0.3kg</span>
+            </button>
+            <button data-item="takeout" class="trash-throw-btn group flex flex-col items-center justify-center p-2 rounded-xl bg-orange-950/50 hover:bg-orange-900/70 border border-orange-500/40 transition">
+              <span class="text-base">🥡</span>
+              <span class="text-[11px] font-semibold text-orange-200 mt-0.5">免洗餐盒</span>
+              <span class="text-[9px] text-orange-400">不可回收・0.7kg</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Auto Demo Loop Toggle -->
+        <div class="flex lg:flex-col items-center justify-center gap-2 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-700/80 pt-2 lg:pt-0 lg:pl-3">
+          <button id="auto-demo-btn" type="button" class="w-full lg:w-40 px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5">
+            <span id="auto-demo-dot" class="h-2 w-2 rounded-full bg-slate-950"></span>
+            <span id="auto-demo-label">啟動連續自動演示</span>
+          </button>
+          <button id="reset-tray-btn" type="button" class="w-full lg:w-40 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-medium text-xs transition">
+            補充托盤垃圾
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Non-blocking Toast Message Box -->
+    <div id="toast-box" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-40 rounded-xl bg-slate-900/95 border border-amber-400/60 text-amber-200 px-4 py-2.5 text-xs sm:text-sm font-medium shadow-2xl">
+      提示訊息
+    </div>
+  </div>
+
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    /**
+     * 顯示短暫提示通知（取代 alert）
+     */
+    function showToast(text, isAlert = false) {
+      const box = document.getElementById('toast-box');
+      if (!box) return;
+      box.textContent = text;
+      box.className = isAlert
+        ? 'fixed top-20 left-1/2 -translate-x-1/2 z-40 rounded-xl bg-rose-950/95 border border-rose-500 text-rose-200 px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-2xl'
+        : 'fixed top-20 left-1/2 -translate-x-1/2 z-40 rounded-xl bg-slate-900/95 border border-cyan-400/60 text-cyan-200 px-4 py-2.5 text-xs sm:text-sm font-medium shadow-2xl';
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => box.classList.add('hidden'), 2800);
+    }
+
+    /**
+     * 動態生成垃圾桶正面標誌與文字貼圖 (CanvasTexture)
+     */
+    function createBinFrontTexture(type) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      const isRecyclable = type === 'recyclable';
+      ctx.clearRect(0, 0, 512, 512);
+
+      // 背景徽章卡片
+      ctx.fillStyle = isRecyclable ? 'rgba(6, 182, 212, 0.16)' : 'rgba(249, 115, 22, 0.16)';
+      ctx.strokeStyle = isRecyclable ? '#22d3ee' : '#fb923c';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.roundRect(46, 56, 420, 400, 36);
+      ctx.fill();
+      ctx.stroke();
+
+      // 圖示符號
+      ctx.fillStyle = isRecyclable ? '#38bdf8' : '#fb923c';
+      ctx.font = 'bold 130px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isRecyclable ? '♻' : '🗑', 256, 195);
+
+      // 中文主標題
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 54px "Noto Sans TC", sans-serif';
+      ctx.fillText(isRecyclable ? '可回收垃圾' : '不可回收', 256, 315);
+
+      // 英文副標題
+      ctx.fillStyle = isRecyclable ? '#67e8f9' : '#fdba74';
+      ctx.font = 'bold 28px Inter, sans-serif';
+      ctx.fillText(isRecyclable ? 'RECYCLABLE' : 'GENERAL WASTE', 256, 378);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    /**
+     * 垃圾種類資料庫定義
+     */
+    const TRASH_CATALOG = {
+      bottle: { key: 'bottle', name: '寶特瓶', category: 'recyclable', weight: 0.35, capacity: 7, confidence: '99.1%', color: 0x38bdf8 },
+      can:    { key: 'can',    name: '鋁罐',   category: 'recyclable', weight: 0.25, capacity: 5, confidence: '98.4%', color: 0xe2e8f0 },
+      box:    { key: 'box',    name: '紙箱',   category: 'recyclable', weight: 0.65, capacity: 12, confidence: '97.8%', color: 0xd97706 },
+      glass:  { key: 'glass',  name: '玻璃瓶', category: 'recyclable', weight: 0.85, capacity: 8, confidence: '98.9%', color: 0x10b981 },
+      tissue: { key: 'tissue', name: '衛生紙團', category: 'general', weight: 0.20, capacity: 6, confidence: '96.5%', color: 0xf8fafc },
+      banana: { key: 'banana', name: '廚餘果皮', category: 'general', weight: 0.55, capacity: 8, confidence: '98.2%', color: 0xfacc15 },
+      bag:    { key: 'bag',    name: '髒塑膠袋', category: 'general', weight: 0.30, capacity: 9, confidence: '95.9%', color: 0x94a3b8 },
+      takeout:{ key: 'takeout',name: '免洗餐盒', category: 'general', weight: 0.70, capacity: 13, confidence: '97.4%', color: 0xfb7185 }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (typeof THREE === 'undefined' || typeof THREE.OrbitControls === 'undefined') {
+        showToast('3D 引擎載入失敗，請檢查網路連線', true);
+        return;
+      }
+
+      const container = document.getElementById('canvas-container');
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x060911, 0.032);
+
+      const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+      const CAM_PRESETS = {
+        front:  { pos: new THREE.Vector3(0.35, 2.55, 5.4), target: new THREE.Vector3(0.25, 1.05, 0) },
+        sensor: { pos: new THREE.Vector3(-0.6, 2.35, 2.45), target: new THREE.Vector3(-0.3, 1.78, 0.25) },
+        top:    { pos: new THREE.Vector3(0.0, 4.3, 1.65), target: new THREE.Vector3(0.0, 0.9, 0.0) },
+        base:   { pos: new THREE.Vector3(-1.35, 0.75, 2.6), target: new THREE.Vector3(-0.4, 0.15, 0.0) }
+      };
+      camera.position.copy(CAM_PRESETS.front.pos);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      container.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.copy(CAM_PRESETS.front.target);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.minDistance = 1.6;
+      controls.maxDistance = 11;
+      controls.maxPolarAngle = Math.PI * 0.49;
+      controls.update();
+
+      // 燈光系統
+      const hemiLight = new THREE.HemisphereLight(0xe2e8f0, 0x0f172a, 0.75);
+      scene.add(hemiLight);
+
+      const mainSpot = new THREE.DirectionalLight(0xffffff, 1.15);
+      mainSpot.position.set(4.5, 7.5, 5.0);
+      mainSpot.castShadow = true;
+      mainSpot.shadow.mapSize.width = 2048;
+      mainSpot.shadow.mapSize.height = 2048;
+      mainSpot.shadow.camera.near = 1;
+      mainSpot.shadow.camera.far = 20;
+      const d = 4.5;
+      mainSpot.shadow.camera.left = -d;
+      mainSpot.shadow.camera.right = d;
+      mainSpot.shadow.camera.top = d;
+      mainSpot.shadow.camera.bottom = -d;
+      mainSpot.shadow.bias = -0.0005;
+      scene.add(mainSpot);
+
+      const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
+      rimLight.position.set(-4.5, 3.5, -3.5);
+      scene.add(rimLight);
+
+      // 地面與智慧站台底座
+      const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(16, 64),
+        new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.85, metalness: 0.1 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const grid = new THREE.GridHelper(12, 24, 0x1e293b, 0x111827);
+      grid.position.y = 0.002;
+      scene.add(grid);
+
+      // 雙桶共用的智慧感測站台基座
+      const stationDeck = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.06, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.6 })
+      );
+      stationDeck.position.set(-0.2, 0.03, 0);
+      stationDeck.receiveShadow = true;
+      stationDeck.castShadow = true;
+      scene.add(stationDeck);
+
+      /**
+       * 建立單座完整硬體感測智慧垃圾桶 (3D 結構組裝)
+       * 包含：荷重元底座、雙層外桶、內部垃圾堆積網格、超音波容量感測器、
+       * 電動轉軸桶蓋、RGB 狀態 LED 燈條、AI 視覺鏡頭模組與補光燈
+       */
+      function createSmartBin({ category, xPos }) {
+        const isRecyclable = category === 'recyclable';
+        const accentHex = isRecyclable ? 0x06b6d4 : 0xf97316;
+        const bodyHex = isRecyclable ? 0x1e293b : 0x27272a;
+
+        const root = new THREE.Group();
+        root.position.set(xPos, 0.06, 0);
+        scene.add(root);
+
+        // 1. 重量感測器底座 (4顆高精度荷重元 Load Cells + 感測發光墊)
+        const loadCellGroup = new THREE.Group();
+        root.add(loadCellGroup);
+
+        const sensorPadMat = new THREE.MeshStandardMaterial({
+          color: accentHex,
+          emissive: accentHex,
+          emissiveIntensity: 0.65,
+          roughness: 0.3
+        });
+
+        const footOffsets = [
+          [-0.44, -0.42], [0.44, -0.42],
+          [-0.44,  0.42], [0.44,  0.42]
+        ];
+        footOffsets.forEach(([fx, fz]) => {
+          const cellBody = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.09, 0.07, 20),
+            new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.2 })
+          );
+          cellBody.position.set(fx, 0.035, fz);
+          cellBody.castShadow = true;
+          loadCellGroup.add(cellBody);
+
+          const glowRing = new THREE.Mesh(
+            new THREE.TorusGeometry(0.085, 0.012, 12, 24),
+            sensorPadMat
+          );
+          glowRing.rotation.x = Math.PI / 2;
+          glowRing.position.set(fx, 0.035, fz);
+          loadCellGroup.add(glowRing);
+        });
+
+        // 秤重承載盤
+        const scalePlate = new THREE.Mesh(
+          new THREE.BoxGeometry(1.08, 0.04, 1.04),
+          new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 })
+        );
+        scalePlate.position.y = 0.09;
+        scalePlate.castShadow = true;
+        scalePlate.receiveShadow = true;
+        root.add(scalePlate);
+
+        // 2. 桶身外殼 (圓角方柱造型，正面略微傾斜以利視覺設計)
+        const binHeight = 1.48;
+        const binWidth = 1.02;
+        const binDepth = 0.98;
+
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: bodyHex,
+          metalness: 0.55,
+          roughness: 0.35
+        });
+
+        // 四周側板組成中空桶身，讓開蓋時可清楚看到內部垃圾與超音波感測器
+        const wallThick = 0.055;
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(binWidth, binHeight, wallThick), bodyMat);
+        backWall.position.set(0, 0.11 + binHeight / 2, -binDepth / 2 + wallThick / 2);
+        backWall.castShadow = true;
+        backWall.receiveShadow = true;
+        root.add(backWall);
+
+        const frontWall = new THREE.Mesh(new THREE.BoxGeometry(binWidth, binHeight, wallThick), bodyMat);
+        frontWall.position.set(0, 0.11 + binHeight / 2, binDepth / 2 - wallThick / 2);
+        frontWall.castShadow = true;
+        frontWall.receiveShadow = true;
+        root.add(frontWall);
+
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, binHeight, binDepth - wallThick * 2), bodyMat);
+        leftWall.position.set(-binWidth / 2 + wallThick / 2, 0.11 + binHeight / 2, 0);
+        leftWall.castShadow = true;
+        leftWall.receiveShadow = true;
+        root.add(leftWall);
+
+        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, binHeight, binDepth - wallThick * 2), bodyMat);
+        rightWall.position.set(binWidth / 2 - wallThick / 2, 0.11 + binHeight / 2, 0);
+        rightWall.castShadow = true;
+        rightWall.receiveShadow = true;
+        root.add(rightWall);
+
+        // 內部暗色內膽底板
+        const innerFloor = new THREE.Mesh(
+          new THREE.BoxGeometry(binWidth - wallThick * 2, 0.04, binDepth - wallThick * 2),
+          new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.9 })
+        );
+        innerFloor.position.set(0, 0.13, 0);
+        root.add(innerFloor);
+
+        // 正面分類標誌牌
+        const decalMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.76, 0.76),
+          new THREE.MeshStandardMaterial({
+            map: createBinFrontTexture(category),
+            transparent: true,
+            roughness: 0.35
+          })
+        );
+        decalMesh.position.set(0, 0.82, binDepth / 2 + 0.004);
+        root.add(decalMesh);
+
+        // 3. 內部垃圾堆積網格 (隨容量 % 動態升高)
+        const pileGroup = new THREE.Group();
+        pileGroup.position.set(0, 0.16, 0);
+        root.add(pileGroup);
+
+        const pileBase = new THREE.Mesh(
+          new THREE.BoxGeometry(binWidth - wallThick * 2.2, 1.0, binDepth - wallThick * 2.2),
+          new THREE.MeshStandardMaterial({
+            color: isRecyclable ? 0x164e63 : 0x3f2e21,
+            roughness: 0.85,
+            metalness: 0.1
+          })
+        );
+        pileBase.position.y = 0.5;
+        pileGroup.add(pileBase);
+
+        // 在垃圾表面增加凹凸雜物細節
+        for (let i = 0; i < 9; i++) {
+          const lump = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(0.11, 0),
+            new THREE.MeshStandardMaterial({
+              color: i % 2 === 0 ? accentHex : 0x64748b,
+              roughness: 0.6
+            })
+          );
+          lump.position.set(
+            ((i % 3) - 1) * 0.22,
+            1.02,
+            (Math.floor(i / 3) - 1) * 0.2
+          );
+          pileGroup.add(lump);
+        }
+
+        // 4. 狀態顯示 RGB LED 燈條 (環繞桶身頂框與正面狀態條)
+        const ledMat = new THREE.MeshStandardMaterial({
+          color: 0x10b981,
+          emissive: 0x10b981,
+          emissiveIntensity: 1.4,
+          roughness: 0.2
+        });
+
+        const frontLedBar = new THREE.Mesh(new THREE.BoxGeometry(binWidth + 0.02, 0.036, 0.03), ledMat);
+        frontLedBar.position.set(0, 0.11 + binHeight - 0.04, binDepth / 2 + 0.01);
+        root.add(frontLedBar);
+
+        const leftLedBar = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.036, binDepth + 0.02), ledMat);
+        leftLedBar.position.set(-binWidth / 2 - 0.01, 0.11 + binHeight - 0.04, 0);
+        root.add(leftLedBar);
+
+        const rightLedBar = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.036, binDepth + 0.02), ledMat);
+        rightLedBar.position.set(binWidth / 2 + 0.01, 0.11 + binHeight - 0.04, 0);
+        root.add(rightLedBar);
+
+        // 5. 電動旋轉桶蓋 + 內部超音波容量感測器 (Ultrasonic ToF Sensor)
+        const lidPivot = new THREE.Group();
+        lidPivot.position.set(0, 0.11 + binHeight, -binDepth / 2 + 0.03);
+        root.add(lidPivot);
+
+        const lidMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(binWidth + 0.03, 0.065, binDepth + 0.03),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.65, roughness: 0.25 })
+        );
+        lidMesh.position.set(0, 0.032, binDepth / 2 - 0.03);
+        lidMesh.castShadow = true;
+        lidPivot.add(lidMesh);
+
+        // 桶蓋頂部裝飾邊框
+        const lidAccentTrim = new THREE.Mesh(
+          new THREE.BoxGeometry(binWidth - 0.16, 0.016, binDepth - 0.16),
+          new THREE.MeshStandardMaterial({ color: accentHex, metalness: 0.4, roughness: 0.35 })
+        );
+        lidAccentTrim.position.set(0, 0.07, binDepth / 2 - 0.03);
+        lidPivot.add(lidAccentTrim);
+
+        // 容量感測器 (雙眼超音波探頭，安裝於桶蓋內側朝下量測垃圾高度)
+        const ultrasonicPod = new THREE.Group();
+        ultrasonicPod.position.set(0, -0.01, binDepth / 2 - 0.03);
+        lidPivot.add(ultrasonicPod);
+
+        const sensorBoard = new THREE.Mesh(
+          new THREE.BoxGeometry(0.24, 0.025, 0.11),
+          new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 })
+        );
+        ultrasonicPod.add(sensorBoard);
+
+        [-0.06, 0.06].forEach((ex) => {
+          const transducer = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.036, 0.036, 0.03, 20),
+            new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.15 })
+          );
+          transducer.position.set(ex, -0.02, 0);
+          ultrasonicPod.add(transducer);
+        });
+
+        // 6. 頂部 AI 視覺鏡頭與補光燈模組支架 (安裝於桶身後方並向前俯視投放區)
+        const mastGroup = new THREE.Group();
+        mastGroup.position.set(0, 0.11 + binHeight, -binDepth / 2 + 0.03);
+        root.add(mastGroup);
+
+        const mastPillar = new THREE.Mesh(
+          new THREE.BoxGeometry(0.11, 0.42, 0.08),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 })
+        );
+        mastPillar.position.set(0, 0.21, -0.02);
+        mastPillar.castShadow = true;
+        mastGroup.add(mastPillar);
+
+        const sensorHead = new THREE.Mesh(
+          new THREE.BoxGeometry(0.46, 0.13, 0.18),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.75, roughness: 0.25 })
+        );
+        sensorHead.position.set(0, 0.41, 0.07);
+        sensorHead.rotation.x = 0.38; // 向下傾斜俯視垃圾接近區
+        sensorHead.castShadow = true;
+        mastGroup.add(sensorHead);
+
+        // 鏡頭模組 (Camera Lens)
+        const lensBarrel = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.045, 0.048, 0.05, 24),
+          new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.2 })
+        );
+        lensBarrel.rotation.x = Math.PI / 2;
+        lensBarrel.position.set(-0.1, 0, 0.1);
+        sensorHead.add(lensBarrel);
+
+        const lensGlass = new THREE.Mesh(
+          new THREE.SphereGeometry(0.036, 20, 20),
+          new THREE.MeshStandardMaterial({
+            color: 0x0ea5e9,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.7,
+            roughness: 0.05,
+            metalness: 0.9
+          })
+        );
+        lensGlass.position.set(-0.1, 0, 0.115);
+        sensorHead.add(lensGlass);
+
+        // 補光燈模組 (LED Fill Light Bar + SpotLight)
+        const fillLightMat = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          emissive: 0xf8fafc,
+          emissiveIntensity: 0.15,
+          roughness: 0.2
+        });
+        const fillLightBar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.055, 0.025), fillLightMat);
+        fillLightBar.position.set(0.09, 0, 0.095);
+        sensorHead.add(fillLightBar);
+
+        const fillSpotLight = new THREE.SpotLight(0xf8fafc, 0, 4.5, Math.PI / 4, 0.5, 1);
+        fillSpotLight.position.set(0.09, -0.02, 0.12);
+        const spotTarget = new THREE.Object3D();
+        spotTarget.position.set(0, -1.2, 1.3);
+        sensorHead.add(spotTarget);
+        fillSpotLight.target = spotTarget;
+        sensorHead.add(fillSpotLight);
+
+        // AI 掃描光束錐 (偵測到垃圾接近時顯示)
+        const scanConeMat = new THREE.MeshBasicMaterial({
+          color: accentHex,
+          transparent: true,
+          opacity: 0.0,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        const scanCone = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.45, 24, 1, true), scanConeMat);
+        scanCone.position.set(-0.1, -0.68, 0.45);
+        scanCone.rotation.x = -0.35;
+        sensorHead.add(scanCone);
+
+        return {
+          category,
+          root,
+          xPos,
+          lidPivot,
+          pileGroup,
+          ledMat,
+          sensorPadMat,
+          fillLightMat,
+          fillSpotLight,
+          scanConeMat,
+          capacity: isRecyclable ? 12 : 18,
+          weight: isRecyclable ? 1.2 : 1.8,
+          maxWeight: 10.0,
+          isOpen: false,
+          targetLidAngle: 0,
+          fillLightActive: false,
+          detecting: false
+        };
+      }
+
+      // 建立左桶（可回收）與右桶（不可回收）
+      const bins = {
+        recyclable: createSmartBin({ category: 'recyclable', xPos: -0.88 }),
+        general:    createSmartBin({ category: 'general',    xPos:  0.48 })
+      };
+
+      // 右側垃圾模擬放置托盤 (Staging Tray)
+      const trayGroup = new THREE.Group();
+      trayGroup.position.set(1.95, 0.04, 0.35);
+      scene.add(trayGroup);
+
+      const trayDeck = new THREE.Mesh(
+        new THREE.BoxGeometry(1.15, 0.08, 1.55),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.5 })
+      );
+      trayDeck.receiveShadow = true;
+      trayDeck.castShadow = true;
+      trayGroup.add(trayDeck);
+
+      const trayRim = new THREE.Mesh(
+        new THREE.BoxGeometry(1.19, 0.03, 1.59),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.3 })
+      );
+      trayRim.position.y = 0.045;
+      trayGroup.add(trayRim);
+
+      /**
+       * 依據垃圾類型建立對應的 3D 幾何模型
+       */
+      function buildTrashMesh(itemKey) {
+        const meta = TRASH_CATALOG[itemKey];
+        const group = new THREE.Group();
+        group.userData = { ...meta, isTrashItem: true };
+
+        if (itemKey === 'bottle') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.78, roughness: 0.15, metalness: 0.1 });
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.24, 18), mat);
+          body.position.y = 0.12;
+          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.07, 0.07, 16), mat);
+          neck.position.y = 0.27;
+          const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+          cap.position.y = 0.315;
+          group.add(body, neck, cap);
+        } else if (itemKey === 'can') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.18, 20), mat);
+          body.position.y = 0.09;
+          const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 20), new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6 }));
+          stripe.position.y = 0.09;
+          group.add(body, stripe);
+        } else if (itemKey === 'box') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.85 });
+          const box = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.18), mat);
+          box.position.y = 0.08;
+          const tape = new THREE.Mesh(new THREE.BoxGeometry(0.224, 0.01, 0.04), new THREE.MeshStandardMaterial({ color: 0xfef3c7 }));
+          tape.position.y = 0.162;
+          group.add(box, tape);
+        } else if (itemKey === 'glass') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0x10b981, transparent: true, opacity: 0.82, roughness: 0.1, metalness: 0.2 });
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.075, 0.22, 18), mat);
+          body.position.y = 0.11;
+          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.055, 0.11, 16), mat);
+          neck.position.y = 0.27;
+          group.add(body, neck);
+        } else if (itemKey === 'tissue') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.95 });
+          const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 1), mat);
+          ball.position.y = 0.11;
+          group.add(ball);
+        } else if (itemKey === 'banana') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.6 });
+          const peel = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.032, 10, 20, Math.PI * 1.15), mat);
+          peel.rotation.x = Math.PI / 2;
+          peel.position.y = 0.05;
+          group.add(peel);
+        } else if (itemKey === 'bag') {
+          const mat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.45, metalness: 0.1 });
+          const bag = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12, 1), mat);
+          bag.scale.set(1.1, 0.85, 1.0);
+          bag.position.y = 0.1;
+          group.add(bag);
+        } else {
+          // takeout box
+          const mat = new THREE.MeshStandardMaterial({ color: 0xfb7185, roughness: 0.55 });
+          const base = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.16), mat);
+          base.position.y = 0.045;
+          const lid = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.025, 0.17), new THREE.MeshStandardMaterial({ color: 0xfef2f2 }));
+          lid.position.set(0, 0.10, -0.02);
+          lid.rotation.x = -0.25;
+          group.add(base, lid);
+        }
+
+        group.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
+
+        return group;
+      }
+
+      // 管理場景中可互動的 3D 垃圾物件
+      const activeTrashObjects = [];
+      let activeThrowAnimation = null;
+
+      function populateTrayItems() {
+        // 清除現有托盤物品
+        while (activeTrashObjects.length > 0) {
+          const item = activeTrashObjects.pop();
+          scene.remove(item);
+        }
+
+        const keys = Object.keys(TRASH_CATALOG);
+        keys.forEach((key, idx) => {
+          const mesh = buildTrashMesh(key);
+          const col = idx % 2;
+          const row = Math.floor(idx / 2);
+          const homePos = new THREE.Vector3(
+            1.68 + col * 0.52,
+            0.09,
+            -0.22 + row * 0.38
+          );
+          mesh.position.copy(homePos);
+          mesh.userData.homePos = homePos.clone();
+          scene.add(mesh);
+          activeTrashObjects.push(mesh);
+        });
+      }
+
+      populateTrayItems();
+
+      // 3D 拖曳交互邏輯 (Raycaster + Drag Plane)
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.15);
+      let draggedTrash = null;
+
+      function updatePointer(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      }
+
+      function onPointerDown(event) {
+        if (activeThrowAnimation) return;
+        updatePointer(event);
+        raycaster.setFromCamera(pointer, camera);
+
+        const hits = raycaster.intersectObjects(activeTrashObjects, true);
+        if (hits.length > 0) {
+          let target = hits[0].object;
+          while (target.parent && !target.userData.isTrashItem) {
+            target = target.parent;
+          }
+          if (target.userData.isTrashItem) {
+            draggedTrash = target;
+            controls.enabled = false;
+            draggedTrash.position.y = 1.25;
+          }
+        }
+      }
+
+      function onPointerMove(event) {
+        if (!draggedTrash) return;
+        updatePointer(event);
+        raycaster.setFromCamera(pointer, camera);
+
+        const intersectPoint = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(dragPlane, intersectPoint)) {
+          draggedTrash.position.x = THREE.MathUtils.clamp(intersectPoint.x, -2.0, 2.5);
+          draggedTrash.position.z = THREE.MathUtils.clamp(intersectPoint.z, -1.2, 1.8);
+          draggedTrash.position.y = 1.68; // 懸浮於桶口上方高度方便投入
+        }
+      }
+
+      function onPointerUp() {
+        if (!draggedTrash) return;
+        controls.enabled = true;
+
+        const item = draggedTrash;
+        draggedTrash = null;
+
+        // 檢查是否釋放在對應或任一垃圾桶上方
+        const targetBin = bins[item.userData.category];
+        const distToTarget = Math.hypot(item.position.x - targetBin.xPos, item.position.z - 0);
+
+        if (distToTarget < 0.85) {
+          dropItemIntoBin(item, targetBin);
+        } else {
+          // 放回托盤原位
+          item.position.copy(item.userData.homePos);
+        }
+      }
+
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+
+      /**
+       * 將垃圾投入指定垃圾桶並更新容量、重量與 LED 狀態
+       */
+      function dropItemIntoBin(trashMesh, bin) {
+        const meta = trashMesh.userData;
+        if (bin.capacity >= 95 || bin.weight >= bin.maxWeight * 0.95) {
+          showToast(`⚠ ${bin.category === 'recyclable' ? '可回收桶' : '不可回收桶'}已滿或超重，請先清空！`, true);
+          if (trashMesh.userData.homePos) {
+            trashMesh.position.copy(trashMesh.userData.homePos);
+          } else {
+            scene.remove(trashMesh);
+          }
+          return;
+        }
+
+        // 更新感測數值
+        bin.capacity = Math.min(100, bin.capacity + meta.capacity);
+        bin.weight = Math.min(bin.maxWeight, Number((bin.weight + meta.weight).toFixed(2)));
+
+        // 同步滑桿與介面
+        const prefix = bin.category === 'recyclable' ? 'rec' : 'gen';
+        const slider = document.getElementById(`${prefix}-sim-slider`);
+        if (slider) slider.value = bin.capacity;
+
+        // 若是托盤上的物品，投入後重生於托盤原位方便重複測試
+        if (trashMesh.userData.homePos) {
+          trashMesh.position.copy(trashMesh.userData.homePos);
+        } else {
+          scene.remove(trashMesh);
+        }
+
+        showToast(`已投入「${meta.name}」→ ${bin.category === 'recyclable' ? '可回收桶' : '不可回收桶'} (+${meta.weight}kg)`);
+      }
+
+      /**
+       * 一鍵模擬靠近並自動投入動畫
+       */
+      function triggerSimulatedThrow(itemKey) {
+        if (activeThrowAnimation) return;
+        const meta = TRASH_CATALOG[itemKey];
+        if (!meta) return;
+
+        const targetBin = bins[meta.category];
+        if (targetBin.capacity >= 95) {
+          showToast(`⚠ ${meta.category === 'recyclable' ? '可回收桶' : '不可回收桶'}已達滿載上限，桶蓋已鎖定！`, true);
+          return;
+        }
+
+        const simMesh = buildTrashMesh(itemKey);
+        simMesh.position.set(1.85, 1.35, 1.35);
+        scene.add(simMesh);
+
+        activeThrowAnimation = {
+          mesh: simMesh,
+          targetBin,
+          phase: 'approach', // approach -> hover -> drop
+          timer: 0
+        };
+      }
+
+      // 綁定下方快速投入按鈕
+      document.querySelectorAll('.trash-throw-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          triggerSimulatedThrow(btn.dataset.item);
+        });
+      });
+
+      // 連續自動演示迴圈
+      let autoDemoInterval = null;
+      const autoDemoBtn = document.getElementById('auto-demo-btn');
+      const autoDemoLabel = document.getElementById('auto-demo-label');
+
+      autoDemoBtn.addEventListener('click', () => {
+        if (autoDemoInterval) {
+          clearInterval(autoDemoInterval);
+          autoDemoInterval = null;
+          autoDemoLabel.textContent = '啟動連續自動演示';
+          autoDemoBtn.classList.remove('bg-rose-500', 'hover:bg-rose-400', 'text-white');
+          autoDemoBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-400', 'text-slate-950');
+          showToast('已停止自動演示');
+        } else {
+          const keys = Object.keys(TRASH_CATALOG);
+          let idx = 0;
+          triggerSimulatedThrow(keys[idx++ % keys.length]);
+          autoDemoInterval = setInterval(() => {
+            if (!activeThrowAnimation) {
+              // 若滿載則自動清空繼續演示
+              if (bins.recyclable.capacity >= 90) resetBin('recyclable');
+              if (bins.general.capacity >= 90) resetBin('general');
+              triggerSimulatedThrow(keys[idx++ % keys.length]);
+            }
+          }, 3400);
+          autoDemoLabel.textContent = '停止自動演示';
+          autoDemoBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-400', 'text-slate-950');
+          autoDemoBtn.classList.add('bg-rose-500', 'hover:bg-rose-400', 'text-white');
+          showToast('已啟動連續自動分類投入演示');
+        }
+      });
+
+      document.getElementById('reset-tray-btn').addEventListener('click', () => {
+        populateTrayItems();
+        showToast('已重新排列托盤上的模擬垃圾');
+      });
+
+      // 清空與手動測試滑桿
+      function resetBin(category) {
+        const bin = bins[category];
+        bin.capacity = 0;
+        bin.weight = 0;
+        const prefix = category === 'recyclable' ? 'rec' : 'gen';
+        document.getElementById(`${prefix}-sim-slider`).value = 0;
+      }
+
+      document.getElementById('rec-empty-btn').addEventListener('click', () => {
+        resetBin('recyclable');
+        showToast('已清空左桶（可回收）');
+      });
+      document.getElementById('gen-empty-btn').addEventListener('click', () => {
+        resetBin('general');
+        showToast('已清空右桶（不可回收）');
+      });
+
+      document.getElementById('rec-sim-slider').addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        bins.recyclable.capacity = val;
+        bins.recyclable.weight = Number(((val / 100) * bins.recyclable.maxWeight).toFixed(2));
+      });
+
+      document.getElementById('gen-sim-slider').addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        bins.general.capacity = val;
+        bins.general.weight = Number(((val / 100) * bins.general.maxWeight).toFixed(2));
+      });
+
+      // 相機視角切換
+      document.querySelectorAll('.cam-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.cam-btn').forEach((b) => {
+            b.classList.remove('bg-cyan-500/20', 'text-cyan-300', 'border', 'border-cyan-400/40');
+            b.classList.add('text-slate-300');
+          });
+          btn.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border', 'border-cyan-400/40');
+          btn.classList.remove('text-slate-300');
+
+          const preset = CAM_PRESETS[btn.dataset.cam];
+          if (preset) {
+            camera.position.copy(preset.pos);
+            controls.target.copy(preset.target);
+            controls.update();
+          }
+        });
+      });
+
+      /**
+       * 更新每個垃圾桶的感測器狀態、LED 燈色、補光燈與 UI 遙測數據
+       */
+      function updateBinTelemetryAndVisuals(bin, approachingItem, timeSec) {
+        const prefix = bin.category === 'recyclable' ? 'rec' : 'gen';
+        const isFull = bin.capacity >= 95 || bin.weight >= bin.maxWeight * 0.95;
+        const isWarning = !isFull && (bin.capacity >= 75 || bin.weight >= bin.maxWeight * 0.75);
+
+        // 判斷是否有符合分類的垃圾靠近
+        const isMatchingApproach =
+          approachingItem &&
+          approachingItem.userData.category === bin.category &&
+          Math.hypot(approachingItem.position.x - bin.xPos, approachingItem.position.z - 0) < 1.35;
+
+        bin.detecting = Boolean(isMatchingApproach);
+        bin.fillLightActive = Boolean(isMatchingApproach);
+
+        // 滿載時鎖定桶蓋不開啟，否則靠近時自動開蓋
+        if (isFull) {
+          bin.isOpen = false;
+          bin.targetLidAngle = 0;
+        } else if (isMatchingApproach) {
+          bin.isOpen = true;
+          bin.targetLidAngle = -1.42; // 向上掀開約 81 度
+        } else {
+          bin.isOpen = false;
+          bin.targetLidAngle = 0;
+        }
+
+        // 平滑旋轉桶蓋
+        bin.lidPivot.rotation.x += (bin.targetLidAngle - bin.lidPivot.rotation.x) * 0.14;
+
+        // 更新內部垃圾高度網格
+        const pileScaleY = Math.max(0.02, (bin.capacity / 100) * 1.32);
+        bin.pileGroup.scale.y += (pileScaleY - bin.pileGroup.scale.y) * 0.15;
+
+        // 補光燈控制 (偵測到垃圾接近時點亮補光協助鏡頭辨識)
+        const targetFillIntensity = bin.fillLightActive ? 2.4 : 0.15;
+        bin.fillLightMat.emissiveIntensity += (targetFillIntensity - bin.fillLightMat.emissiveIntensity) * 0.2;
+        bin.fillSpotLight.intensity = bin.fillLightActive ? 2.6 : 0;
+
+        // AI 掃描光束錐透明度
+        const targetConeOpacity = bin.detecting ? 0.22 + Math.sin(timeSec * 10) * 0.06 : 0.0;
+        bin.scanConeMat.opacity += (targetConeOpacity - bin.scanConeMat.opacity) * 0.2;
+
+        // 狀態顯示 LED 燈色與 UI 徽章
+        const badgeEl = document.getElementById(`${prefix}-led-badge`);
+        if (isFull) {
+          const blink = Math.sin(timeSec * 12) > 0;
+          bin.ledMat.color.setHex(0xef4444);
+          bin.ledMat.emissive.setHex(0xef4444);
+          bin.ledMat.emissiveIntensity = blink ? 2.2 : 0.4;
+          badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/25 text-rose-300 border border-rose-500/50';
+          badgeEl.textContent = 'LED 紅燈閃爍・滿載鎖定';
+        } else if (bin.isOpen) {
+          bin.ledMat.color.setHex(0x38bdf8);
+          bin.ledMat.emissive.setHex(0x38bdf8);
+          bin.ledMat.emissiveIntensity = 1.8 + Math.sin(timeSec * 8) * 0.4;
+          badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-500/25 text-cyan-300 border border-cyan-400/50';
+          badgeEl.textContent = 'LED 藍燈・自動開蓋中';
+        } else if (isWarning) {
+          bin.ledMat.color.setHex(0xfacc15);
+          bin.ledMat.emissive.setHex(0xfacc15);
+          bin.ledMat.emissiveIntensity = 1.5;
+          badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/25 text-amber-300 border border-amber-400/50';
+          badgeEl.textContent = 'LED 黃燈・即將滿載';
+        } else {
+          bin.ledMat.color.setHex(0x10b981);
+          bin.ledMat.emissive.setHex(0x10b981);
+          bin.ledMat.emissiveIntensity = 1.3;
+          badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+          badgeEl.textContent = 'LED 綠燈・正常待機';
+        }
+
+        // 更新數據讀數
+        document.getElementById(`${prefix}-cap-val`).textContent = `${Math.round(bin.capacity)}%`;
+        document.getElementById(`${prefix}-cap-bar`).style.width = `${bin.capacity}%`;
+
+        document.getElementById(`${prefix}-weight-val`).textContent = `${bin.weight.toFixed(2)} kg`;
+        document.getElementById(`${prefix}-weight-bar`).style.width = `${(bin.weight / bin.maxWeight) * 100}%`;
+
+        document.getElementById(`${prefix}-lid-status`).textContent = isFull ? '滿載鎖定' : (bin.isOpen ? '開啟中' : '關閉');
+        document.getElementById(`${prefix}-lid-status`).className = isFull ? 'text-rose-400' : (bin.isOpen ? 'text-cyan-300' : 'text-slate-200');
+
+        document.getElementById(`${prefix}-light-status`).textContent = bin.fillLightActive ? '補光開啟' : '待機';
+        document.getElementById(`${prefix}-light-status`).className = bin.fillLightActive ? 'text-amber-300' : 'text-slate-400';
+
+        document.getElementById(`${prefix}-cam-status`).textContent = bin.detecting ? '鎖定目標' : '監測中';
+        document.getElementById(`${prefix}-cam-status`).className = bin.detecting ? 'text-cyan-300' : 'text-emerald-400';
+      }
+
+      // 主動畫迴圈
+      const clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = clock.getDelta();
+        const elapsed = clock.getElapsedTime();
+
+        // 處理一鍵模擬投入動畫狀態機
+        let simItem = null;
+        if (activeThrowAnimation) {
+          const anim = activeThrowAnimation;
+          anim.timer += dt;
+          simItem = anim.mesh;
+
+          if (anim.phase === 'approach') {
+            // 移動至目標桶身前上方接近區（觸發鏡頭、補光燈與自動開蓋）
+            const hoverTarget = new THREE.Vector3(anim.targetBin.xPos, 1.85, 0.25);
+            anim.mesh.position.lerp(hoverTarget, 0.09);
+            anim.mesh.rotation.y += 1.8 * dt;
+            if (anim.mesh.position.distanceTo(hoverTarget) < 0.12 && anim.timer > 1.15) {
+              anim.phase = 'drop';
+              anim.timer = 0;
+            }
+          } else if (anim.phase === 'drop') {
+            // 垂直落入已開啟的桶內
+            anim.mesh.position.x += (anim.targetBin.xPos - anim.mesh.position.x) * 0.2;
+            anim.mesh.position.z += (0 - anim.mesh.position.z) * 0.2;
+            anim.mesh.position.y -= 3.2 * dt;
+            if (anim.mesh.position.y <= 0.85) {
+              dropItemIntoBin(anim.mesh, anim.targetBin);
+              activeThrowAnimation = null;
+              simItem = null;
+            }
+          }
+        }
+
+        // 決定目前正在接近感測區的垃圾物件（手動拖曳優先，其次為自動模擬物件）
+        const activeApproachObj = draggedTrash || simItem;
+
+        // 更新頂部 AI 視覺辨識狀態橫幅
+        const aiTextEl = document.getElementById('ai-status-text');
+        const aiDotEl = document.getElementById('ai-pulse-dot');
+        if (activeApproachObj) {
+          const m = activeApproachObj.userData;
+          const catLabel = m.category === 'recyclable' ? '可回收 (開啟左桶)' : '不可回收 (開啟右桶)';
+          aiTextEl.textContent = `偵測到「${m.name}」→ ${catLabel}・信心度 ${m.confidence}`;
+          aiTextEl.className = m.category === 'recyclable' ? 'font-bold text-cyan-300' : 'font-bold text-orange-300';
+          aiDotEl.className = m.category === 'recyclable' ? 'h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping' : 'h-2.5 w-2.5 rounded-full bg-orange-400 animate-ping';
+        } else {
+          aiTextEl.textContent = '待機掃描中（拖曳右側托盤垃圾靠近桶身，或點擊下方模擬投入）';
+          aiTextEl.className = 'font-semibold text-slate-200';
+          aiDotEl.className = 'h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse';
+        }
+
+        // 更新左右雙桶硬體狀態
+        updateBinTelemetryAndVisuals(bins.recyclable, activeApproachObj, elapsed);
+        updateBinTelemetryAndVisuals(bins.general, activeApproachObj, elapsed);
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    });
+  </script>
+</body>
+</html>
